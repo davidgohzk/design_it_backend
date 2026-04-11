@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: design_it
+    env: python
+    plan: free
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "bash start.sh"
+    envVars:
+      - key: PORT
+        value: 10000
