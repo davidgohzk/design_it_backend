@@ -50,6 +50,9 @@ class TranscriptItem(StrictModel):
     content: str = Field(max_length=40_000)
 
 
+ReviewSection = Literal["claims", "omissions", "coverage", "reasoning", "critique"]
+
+
 class ReviewRequest(StrictModel):
     # Field order matches the frontend's JSON.stringify payload so the model sees identical text.
     coverageChecklist: list[ChecklistItem] = Field(max_length=50)
@@ -57,6 +60,15 @@ class ReviewRequest(StrictModel):
     transcript: list[TranscriptItem] = Field(max_length=300)
     soapReport: str = Field(max_length=200_000)
     extractedReferences: list[dict[str, Any]] = Field(max_length=500)
+    # Partial retry only: the sections to redo, plus already-accepted claims so claim indexes stay valid.
+    retrySections: list[ReviewSection] | None = Field(default=None, min_length=1, max_length=5)
+    acceptedClaims: list[dict[str, Any]] | None = Field(default=None, max_length=500)
+
+    @model_validator(mode="after")
+    def check_retry(self) -> "ReviewRequest":
+        if self.acceptedClaims is not None and (not self.retrySections or "claims" in self.retrySections):
+            raise ValueError("acceptedClaims is only allowed when retrying sections other than claims.")
+        return self
 
 
 class ReviewResponse(BaseModel):

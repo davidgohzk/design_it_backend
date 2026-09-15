@@ -1,4 +1,4 @@
-SOCLAAS_API_KEY=
+SOCLAAS_API_KEY=""
 SOCLAAS_BASE_URL=https://soclaas-api.comp.nus.edu.sg/v1
 SOCLAAS_MODEL=
 ALLOWED_ORIGINS=http://localhost:5173,http://localhost:4173

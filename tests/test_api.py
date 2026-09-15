@@ -4,7 +4,7 @@ import httpx
 import openai
 import pytest
 
-from app.prompts import CHAT_SYSTEM_PROMPT, MERMAID_SYSTEM_PROMPT, PERSONA_FACTS, REVIEW_PROMPT
+from app.prompts import CHAT_SYSTEM_PROMPT, MERMAID_SYSTEM_PROMPT, PERSONA_FACTS, REVIEW_PROMPT, review_retry_prompt
 from tests.fakes import status_error
 
 CHAT_BODY = {"messages": [{"role": "user", "content": "Hi Sarah"}]}
@@ -124,6 +124,36 @@ def test_review_returns_raw_content(client, fake):
     ]
     assert (call["temperature"], call["max_tokens"]) == (0.1, 8000)
     assert "stream" not in call
+
+
+def test_review_partial_retry_asks_only_for_failed_sections(client, fake):
+    accepted = [{"index": 0, "claim": "About 40 workers", "reportExcerpt": "About 40 workers", "referenceId": "ref-0"}]
+    body = {**REVIEW_BODY, "retrySections": ["coverage", "critique"], "acceptedClaims": accepted}
+
+    response = client.post("/api/review", json=body)
+
+    assert response.status_code == 200
+    system, user = fake.calls[0]["messages"]
+    assert system["content"] == REVIEW_PROMPT + review_retry_prompt(["coverage", "critique"], has_accepted_claims=True)
+    assert "omit every other key: coverage, critique." in system["content"]
+    assert "acceptedClaims" in system["content"]
+    assert json.loads(user["content"]) == {**REVIEW_BODY, "acceptedClaims": accepted}
+
+
+@pytest.mark.parametrize(
+    "extra",
+    [
+        {"retrySections": ["claims", "coverage"], "acceptedClaims": []},
+        {"acceptedClaims": []},
+        {"retrySections": ["summary"]},
+        {"retrySections": []},
+    ],
+)
+def test_review_rejects_invalid_retry_requests(client, fake, extra):
+    response = client.post("/api/review", json={**REVIEW_BODY, **extra})
+
+    assert response.status_code == 422
+    assert fake.calls == []
 
 
 def test_review_empty_content_is_an_error(client, fake):

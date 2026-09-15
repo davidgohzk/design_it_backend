@@ -94,7 +94,13 @@ Return one JSON object only, with this exact shape:
     "rationale": "short explanation of the dependency",
     "dependsOnClaimIndexes": [0],
     "dependsOnReasoningIndexes": []
-  }]
+  }],
+  "critique": {
+    "summary": "overall opinion of the design, under 100 words",
+    "strengths": ["strength 1", "strength 2", "strength 3"],
+    "weaknesses": ["weakness 1", "weakness 2", "weakness 3"],
+    "followUpQuestions": ["question 1", "question 2", "question 3"]
+  }
 }
 
 Coverage rules:
@@ -124,4 +130,39 @@ Reasoning rules:
 - Reasoning dependencies must point backward in the array so the result remains acyclic.
 - Use empty dependency arrays when the report gives no basis; do not invent a dependency."""
 
-REVIEW_PROMPT = REVIEW_SYSTEM_PROMPT + REASONING_PROMPT
+CRITIQUE_PROMPT = """
+Critique rules:
+- Act as a senior system-design reviewer judging the proposed design (Assessment, Plan, System Design, Design Justification) against the client's needs.
+- summary is your overall opinion of the design in under 100 words.
+- Return exactly 3 strengths, exactly 3 weaknesses, and exactly 3 followUpQuestions, ranked most important first.
+- Each item is one concise sentence specific to this design and client. Do not give generic advice.
+- followUpQuestions are what the designer should ask the client or resolve next to improve the design."""
+
+REVIEW_PROMPT = REVIEW_SYSTEM_PROMPT + REASONING_PROMPT + CRITIQUE_PROMPT
+
+REVIEW_SECTION_KEYS = {
+    "claims": "grounding.claims",
+    "omissions": "grounding.omissions",
+    "coverage": "coverage",
+    "reasoning": "reasoning",
+    "critique": "critique",
+}
+
+
+def review_retry_prompt(sections: list[str], has_accepted_claims: bool) -> str:
+    """Instructions appended to REVIEW_PROMPT when only some sections need to be redone."""
+    keys = ", ".join(REVIEW_SECTION_KEYS[section] for section in sections)
+    lines = [
+        "",
+        "",
+        "Partial retry:",
+        f"- Other sections from an earlier response were already accepted. Return only these keys, in the same shape as above, and omit every other key: {keys}.",
+    ]
+    if "claims" in sections or "omissions" in sections:
+        lines.append("- Nest grounding.claims and grounding.omissions inside a grounding object.")
+    if has_accepted_claims:
+        lines.append(
+            "- grounding.claims was already accepted and is supplied as acceptedClaims in the evidence. "
+            "Use each accepted claim's index for reportClaimIndexes and dependsOnClaimIndexes, and do not return grounding.claims."
+        )
+    return "\n".join(lines)
