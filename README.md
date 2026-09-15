@@ -22,7 +22,7 @@ FastAPI service that makes every LLM call for [design_it](https://github.com/dav
 - 20 requests a minute and 300 a day per IP.
 - 6 concurrent upstream calls.
 - Request bodies up to 512 KB.
-- Only origins listed in `ALLOWED_ORIGINS` are allowed through CORS.
+- CORS allows the origins in `ALLOWED_ORIGINS` (`*`, the default in `render.yaml`, allows any origin).
 
 ## Local development
 

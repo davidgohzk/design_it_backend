@@ -254,3 +254,19 @@ def test_cors_allows_only_configured_origins(client):
 
     denied = preflight("https://evil.example")
     assert "access-control-allow-origin" not in denied.headers
+
+
+def test_cors_wildcard_allows_any_origin(make_client):
+    client = make_client(allowed_origins=("*",))
+
+    response = client.options(
+        "/api/chat",
+        headers={
+            "Origin": "https://anywhere.example",
+            "Access-Control-Request-Method": "POST",
+            "Access-Control-Request-Headers": "content-type,x-soclaas-key",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.headers["access-control-allow-origin"] == "*"

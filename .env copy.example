@@ -1,8 +1,7 @@
 SOCLAAS_API_KEY=
 SOCLAAS_BASE_URL=https://soclaas-api.comp.nus.edu.sg/v1
 SOCLAAS_MODEL=
-# "*" allows any origin; or list origins, e.g. https://davidgohzk.github.io,http://localhost:5173
-ALLOWED_ORIGINS=*
+ALLOWED_ORIGINS=http://localhost:5173,http://localhost:4173
 # Optional
 # RATE_LIMIT_PER_MINUTE=20
 # RATE_LIMIT_PER_DAY=300
