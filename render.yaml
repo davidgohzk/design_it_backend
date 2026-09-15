@@ -1,10 +1,20 @@
 services:
   - type: web
+    # Kept as the existing service name: renaming a Blueprint service creates a second service.
     name: design_it
-    env: python
+    runtime: python
     plan: free
-    buildCommand: "pip install -r requirements.txt"
-    startCommand: "bash start.sh"
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --proxy-headers --forwarded-allow-ips="*"
+    healthCheckPath: /health
     envVars:
-      - key: PORT
-        value: 10000
+      - key: PYTHON_VERSION
+        value: 3.12.7
+      - key: SOCLAAS_API_KEY
+        sync: false
+      - key: SOCLAAS_MODEL
+        sync: false
+      - key: SOCLAAS_BASE_URL
+        value: https://soclaas-api.comp.nus.edu.sg/v1
+      - key: ALLOWED_ORIGINS
+        value: https://davidgohzk.github.io,http://localhost:5173,http://localhost:4173

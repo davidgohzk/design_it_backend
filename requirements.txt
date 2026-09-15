@@ -1,5 +1,4 @@
-fastapi
-uvicorn
-sentence-transformers
-numpy
-requests
+fastapi==0.141.1
+uvicorn[standard]==0.53.0
+openai==3.14.0
+httpx==0.28.1
