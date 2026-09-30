@@ -9,7 +9,7 @@ FastAPI service that makes every LLM call for [design_it](https://github.com/dav
 | GET | `/health` | none | `{"status":"ok"}`, used by the Render health check and the frontend warm-up ping |
 | GET | `/health/upstream` | none | `{"reachable","status","latency_ms"}`, checks that this host can reach SoCLaaS |
 | POST | `/api/chat` | `{"caseId"?,"messages":[{"role":"user"\|"assistant","content"}]}` | SSE stream in the case's persona. `caseId` is `"brightpath"` (Sarah, the default) or `"community-room"` (Mei) |
-| POST | `/api/diagram` | `{"prompt","currentCode"?,"priorAttempt"?:{"code","error"}}` | SSE stream (Mermaid source) |
+| POST | `/api/diagram` | `{"caseId"?,"mode"?,"prompt","currentCode"?,"context"?,"priorAttempt"?:{"code","error"}}` | SSE stream (Mermaid source). No `mode` is the /demo prompt; `"sketch"` draws one decision's sketch (`context` lists node IDs and labels already used); `"final"` edits the final diagram |
 | POST | `/api/review` | `{"coverageChecklist","caseBrief","transcript","soapReport","extractedReferences"}` | `{"content": "<raw model JSON>"}` |
 
 **Streams.** Each stream sends `data: {"delta":"..."}` events and ends with `event: done`, whose data is `{"promptVersion","model"}`. A failure after streaming has started is sent as `event: error` with `data: {"code","message"}`.

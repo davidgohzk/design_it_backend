@@ -6,11 +6,13 @@ import pytest
 
 from app.prompts import (
     CHAT_SYSTEM_PROMPT,
+    FINAL_SYSTEM_PROMPT,
     MEI_PROMPT,
     MERMAID_SYSTEM_PROMPT,
     PERSONA_FACTS,
     PERSONAS,
     REVIEW_PROMPT,
+    SKETCH_SYSTEM_PROMPT,
     review_retry_prompt,
 )
 from tests.fakes import status_error
@@ -144,6 +146,69 @@ def test_diagram_retry_rebuilds_message_sequence(client, fake):
         },
     ]
     assert (call["temperature"], call["top_p"], call["max_tokens"]) == (0.2, 1, 4000)
+
+
+def test_diagram_sketch_mode_sends_decision_and_used_nodes(client, fake):
+    body = {
+        "caseId": "community-room",
+        "mode": "sketch",
+        "prompt": "D4 Bookers get an SMS confirmation",
+        "context": 'Calendar: "Shared booking calendar"\nResident: "Resident (actor)"',
+        "currentCode": None,
+        "priorAttempt": None,
+    }
+
+    response = client.post("/api/diagram", json=body)
+
+    assert response.status_code == 200
+    assert fake.calls[0]["messages"] == [
+        {"role": "system", "content": SKETCH_SYSTEM_PROMPT},
+        {
+            "role": "user",
+            "content": 'Nodes already used in other sketches:\nCalendar: "Shared booking calendar"\nResident: "Resident (actor)"',
+        },
+        {"role": "user", "content": "Decision:\nD4 Bookers get an SMS confirmation"},
+    ]
+    assert parse_sse(response.text)[-1] == ("done", {"promptVersion": "diagram-sketch-v1", "model": "test-model"})
+
+
+def test_diagram_final_mode_edits_existing_diagram(client, fake):
+    body = {
+        "caseId": "community-room",
+        "mode": "final",
+        "prompt": "Add SMS",
+        "currentCode": "flowchart LR\n  A-->B",
+        "context": 'SMS: "SMS confirmation"',
+    }
+
+    response = client.post("/api/diagram", json=body)
+
+    assert fake.calls[0]["messages"] == [
+        {"role": "system", "content": FINAL_SYSTEM_PROMPT},
+        {
+            "role": "user",
+            "content": 'Nodes in the decision sketches (use these IDs for the same components):\nSMS: "SMS confirmation"',
+        },
+        {"role": "user", "content": "Existing diagram:\nflowchart LR\n  A-->B"},
+        {"role": "user", "content": "Add SMS"},
+    ]
+    assert parse_sse(response.text)[-1][1]["promptVersion"] == "diagram-final-v1"
+
+
+def test_diagram_prompts_keep_the_spec_rules():
+    assert "Reuse an existing node ID whenever you mean the same component" in SKETCH_SYSTEM_PROMPT
+    assert "Draw only what this decision adds or changes" in SKETCH_SYSTEM_PROMPT
+    assert "Keep node IDs stable when editing" in FINAL_SYSTEM_PROMPT
+    assert "Never add a node or connection the engineer did not ask for" in FINAL_SYSTEM_PROMPT
+    for prompt in (SKETCH_SYSTEM_PROMPT, FINAL_SYSTEM_PROMPT):
+        assert "(actor)" in prompt
+
+
+def test_diagram_rejects_unknown_mode(client, fake):
+    response = client.post("/api/diagram", json={"mode": "poster", "prompt": "A web app"})
+
+    assert response.status_code == 422
+    assert fake.calls == []
 
 
 def test_diagram_without_existing_code(client, fake):

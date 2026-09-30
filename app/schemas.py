@@ -37,8 +37,13 @@ class PriorAttempt(StrictModel):
 
 
 class DiagramRequest(StrictModel):
+    # caseId and mode are omitted by /demo, which keeps the original diagram prompt.
+    caseId: CaseId = "brightpath"
+    mode: Literal["sketch", "final"] | None = None
     prompt: str = Field(min_length=1, max_length=8_000)
     currentCode: str | None = Field(default=None, max_length=20_000)
+    # Sketch mode: the node IDs and labels already used in other sketches, one per line.
+    context: str | None = Field(default=None, max_length=20_000)
     priorAttempt: PriorAttempt | None = None
 
 

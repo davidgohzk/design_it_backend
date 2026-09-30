@@ -4,7 +4,17 @@ from fastapi import APIRouter, Depends, Request
 from fastapi.responses import StreamingResponse
 
 from .llm import LLM, complete, get_llm, stream_completion
-from .prompts import MERMAID_PROMPT_VERSION, MERMAID_SYSTEM_PROMPT, PERSONAS, REVIEW_PROMPT, review_retry_prompt
+from .prompts import (
+    FINAL_PROMPT_VERSION,
+    FINAL_SYSTEM_PROMPT,
+    MERMAID_PROMPT_VERSION,
+    MERMAID_SYSTEM_PROMPT,
+    PERSONAS,
+    REVIEW_PROMPT,
+    SKETCH_PROMPT_VERSION,
+    SKETCH_SYSTEM_PROMPT,
+    review_retry_prompt,
+)
 from .ratelimit import rate_limited
 from .schemas import ChatRequest, DiagramRequest, ReviewRequest, ReviewResponse
 
@@ -27,11 +37,30 @@ async def chat(body: ChatRequest, request: Request, llm: LLM = Depends(get_llm))
     )
 
 
+# mode None is /demo's original prompt; "sketch" and "final" are the /simple design doc's.
+DIAGRAM_PROMPTS = {
+    None: (MERMAID_SYSTEM_PROMPT, MERMAID_PROMPT_VERSION),
+    "sketch": (SKETCH_SYSTEM_PROMPT, SKETCH_PROMPT_VERSION),
+    "final": (FINAL_SYSTEM_PROMPT, FINAL_PROMPT_VERSION),
+}
+
+
 def diagram_messages(body: DiagramRequest) -> list[dict]:
-    messages = [{"role": "system", "content": MERMAID_SYSTEM_PROMPT}]
+    system_prompt, _version = DIAGRAM_PROMPTS[body.mode]
+    messages = [{"role": "system", "content": system_prompt}]
+    if body.mode == "sketch":
+        used = (body.context or "").strip() or "(none yet)"
+        messages.append({"role": "user", "content": f"Nodes already used in other sketches:\n{used}"})
+    elif body.mode == "final" and body.context and body.context.strip():
+        messages.append({
+            "role": "user",
+            "content": f"Nodes in the decision sketches (use these IDs for the same components):\n{body.context.strip()}",
+        })
     if body.currentCode:
-        messages.append({"role": "user", "content": f"Existing diagram:\n{body.currentCode}"})
-    messages.append({"role": "user", "content": body.prompt})
+        label = "Current sketch" if body.mode == "sketch" else "Existing diagram"
+        messages.append({"role": "user", "content": f"{label}:\n{body.currentCode}"})
+    prompt = f"Decision:\n{body.prompt}" if body.mode == "sketch" else body.prompt
+    messages.append({"role": "user", "content": prompt})
     if body.priorAttempt:
         messages.append({"role": "assistant", "content": body.priorAttempt.code})
         messages.append({
@@ -47,7 +76,7 @@ async def diagram(body: DiagramRequest, request: Request, llm: LLM = Depends(get
         llm,
         request.app.state.upstream_slots,
         diagram_messages(body),
-        prompt_version=MERMAID_PROMPT_VERSION,
+        prompt_version=DIAGRAM_PROMPTS[body.mode][1],
         temperature=0.2,
         top_p=1,
         max_tokens=4000,
