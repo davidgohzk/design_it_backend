@@ -13,29 +13,10 @@ from app.assess_prompts import (
     SOUNDNESS_PROMPT,
     assess_retry_prompt,
 )
-from app.prompts import (
-    CHAT_SYSTEM_PROMPT,
-    FINAL_SYSTEM_PROMPT,
-    MEI_PROMPT,
-    MERMAID_SYSTEM_PROMPT,
-    PERSONA_FACTS,
-    PERSONAS,
-    REVIEW_PROMPT,
-    SKETCH_SYSTEM_PROMPT,
-    review_retry_prompt,
-)
+from app.prompts import CHAT_SYSTEM_PROMPT, DIAGRAM_SYSTEM_PROMPT, MEI_PROMPT, PERSONA_FACTS, PERSONAS
 from tests.fakes import status_error
 
-CHAT_BODY = {"messages": [{"role": "user", "content": "Hi Sarah"}]}
-
-REVIEW_BODY = {
-    "coverageChecklist": [{"id": "field-team-scale", "label": "Field team scale", "description": "About 40 workers"}],
-    "caseBrief": "# Brief — BrightPath",
-    "transcript": [{"id": "chat-msg-0", "role": "assistant", "content": "We have about 40 field workers."}],
-    "soapReport": 'About 40 workers [Chat #1](#chat-msg-0 "We have about 40")',
-    "extractedReferences": [{"id": "ref-0", "kind": "chat", "messageIndex": 0}],
-}
-
+CHAT_BODY = {"caseId": "brightpath", "messages": [{"role": "user", "content": "Hi Sarah"}]}
 
 def parse_sse(text: str) -> list[tuple[str, dict]]:
     events = []
@@ -60,7 +41,7 @@ def test_chat_streams_deltas_with_server_prompt_and_params(client, fake):
     fake.chunks = ["Hello", " there\nfriend"]
     history = [{"role": "assistant", "content": "Hi!"}, {"role": "user", "content": "Hi Sarah"}]
 
-    response = client.post("/api/chat", json={"messages": history})
+    response = client.post("/api/chat", json={"caseId": "brightpath", "messages": history})
 
     assert response.status_code == 200
     assert response.headers["content-type"].startswith("text/event-stream")
@@ -87,15 +68,15 @@ def test_chat_uses_the_persona_for_the_case(client, fake):
     assert parse_sse(response.text)[-1] == ("done", {"promptVersion": "persona-mei-v1", "model": "test-model"})
 
 
-def test_chat_without_case_id_keeps_sarah(client, fake):
-    client.post("/api/chat", json=CHAT_BODY)
+def test_chat_requires_a_case(client, fake):
+    response = client.post("/api/chat", json={"messages": CHAT_BODY["messages"]})
 
-    assert PERSONAS["brightpath"]["prompt"] is CHAT_SYSTEM_PROMPT
-    assert fake.calls[0]["messages"][0] == {"role": "system", "content": CHAT_SYSTEM_PROMPT}
+    assert response.status_code == 422
+    assert fake.calls == []
 
 
 def test_chat_rejects_unknown_case(client, fake):
-    response = client.post("/api/chat", json={"caseId": "nope", **CHAT_BODY})
+    response = client.post("/api/chat", json={**CHAT_BODY, "caseId": "nope"})
 
     assert response.status_code == 422
     assert fake.calls == []
@@ -126,7 +107,7 @@ def test_chat_prompt_includes_every_persona_fact():
     ],
 )
 def test_chat_rejects_invalid_conversations(client, fake, messages):
-    response = client.post("/api/chat", json={"messages": messages})
+    response = client.post("/api/chat", json={"caseId": "brightpath", "messages": messages})
 
     assert response.status_code == 422
     assert response.json()["error"]["code"] == "invalid_request"
@@ -145,7 +126,7 @@ def test_diagram_retry_rebuilds_message_sequence(client, fake):
     assert response.status_code == 200
     call = fake.calls[0]
     assert call["messages"] == [
-        {"role": "system", "content": MERMAID_SYSTEM_PROMPT},
+        {"role": "system", "content": DIAGRAM_SYSTEM_PROMPT},
         {"role": "user", "content": "Existing diagram:\nflowchart TD\n  A-->B"},
         {"role": "user", "content": "Add a cache"},
         {"role": "assistant", "content": "flowchart TD\n  A-->"},
@@ -157,34 +138,8 @@ def test_diagram_retry_rebuilds_message_sequence(client, fake):
     assert (call["temperature"], call["top_p"], call["max_tokens"]) == (0.2, 1, 4000)
 
 
-def test_diagram_sketch_mode_sends_decision_and_used_nodes(client, fake):
+def test_diagram_edits_existing_diagram_with_the_sketch_nodes(client, fake):
     body = {
-        "caseId": "community-room",
-        "mode": "sketch",
-        "prompt": "D4 Bookers get an SMS confirmation",
-        "context": 'Calendar: "Shared booking calendar"\nResident: "Resident (actor)"',
-        "currentCode": None,
-        "priorAttempt": None,
-    }
-
-    response = client.post("/api/diagram", json=body)
-
-    assert response.status_code == 200
-    assert fake.calls[0]["messages"] == [
-        {"role": "system", "content": SKETCH_SYSTEM_PROMPT},
-        {
-            "role": "user",
-            "content": 'Nodes already used in other sketches:\nCalendar: "Shared booking calendar"\nResident: "Resident (actor)"',
-        },
-        {"role": "user", "content": "Decision:\nD4 Bookers get an SMS confirmation"},
-    ]
-    assert parse_sse(response.text)[-1] == ("done", {"promptVersion": "diagram-sketch-v2", "model": "test-model"})
-
-
-def test_diagram_final_mode_edits_existing_diagram(client, fake):
-    body = {
-        "caseId": "community-room",
-        "mode": "final",
         "prompt": "Add SMS",
         "currentCode": "flowchart LR\n  A-->B",
         "context": 'SMS: "SMS confirmation"',
@@ -193,7 +148,7 @@ def test_diagram_final_mode_edits_existing_diagram(client, fake):
     response = client.post("/api/diagram", json=body)
 
     assert fake.calls[0]["messages"] == [
-        {"role": "system", "content": FINAL_SYSTEM_PROMPT},
+        {"role": "system", "content": DIAGRAM_SYSTEM_PROMPT},
         {
             "role": "user",
             "content": 'Nodes in the decision sketches (use these IDs for the same components):\nSMS: "SMS confirmation"',
@@ -204,17 +159,15 @@ def test_diagram_final_mode_edits_existing_diagram(client, fake):
     assert parse_sse(response.text)[-1][1]["promptVersion"] == "diagram-final-v2"
 
 
-def test_diagram_prompts_keep_the_spec_rules():
-    assert "Reuse an existing node ID whenever you mean the same component" in SKETCH_SYSTEM_PROMPT
-    assert "Draw only what this decision adds or changes" in SKETCH_SYSTEM_PROMPT
-    assert "Keep node IDs stable when editing" in FINAL_SYSTEM_PROMPT
-    assert "Never add a node or connection the engineer did not ask for" in FINAL_SYSTEM_PROMPT
-    for prompt in (SKETCH_SYSTEM_PROMPT, FINAL_SYSTEM_PROMPT):
-        assert "(actor)" in prompt
+def test_diagram_prompt_keeps_the_spec_rules():
+    assert "Keep node IDs stable when editing" in DIAGRAM_SYSTEM_PROMPT
+    assert "Never add a node or connection the engineer did not ask for" in DIAGRAM_SYSTEM_PROMPT
+    assert "(actor)" in DIAGRAM_SYSTEM_PROMPT
 
 
-def test_diagram_rejects_unknown_mode(client, fake):
-    response = client.post("/api/diagram", json={"mode": "poster", "prompt": "A web app"})
+def test_diagram_rejects_unknown_fields(client, fake):
+    # The old sketch and free-form modes are gone, and the schema forbids extra fields.
+    response = client.post("/api/diagram", json={"mode": "final", "prompt": "A web app"})
 
     assert response.status_code == 422
     assert fake.calls == []
@@ -226,83 +179,7 @@ def test_diagram_without_existing_code(client, fake):
     assert [message["role"] for message in fake.calls[0]["messages"]] == ["system", "user"]
 
 
-def test_review_returns_raw_content(client, fake):
-    fake.content = '{"coverage": []}'
-
-    response = client.post("/api/review", json=REVIEW_BODY)
-
-    assert response.status_code == 200
-    assert response.json() == {"content": '{"coverage": []}'}
-    call = fake.calls[0]
-    assert call["messages"] == [
-        {"role": "system", "content": REVIEW_PROMPT},
-        # Must match what JSON.stringify produced in the browser.
-        {"role": "user", "content": json.dumps(REVIEW_BODY, ensure_ascii=False, separators=(",", ":"))},
-    ]
-    assert (call["temperature"], call["max_tokens"]) == (0.1, 8000)
-    assert "stream" not in call
-
-
-def test_review_partial_retry_asks_only_for_failed_sections(client, fake):
-    accepted = [{"index": 0, "claim": "About 40 workers", "reportExcerpt": "About 40 workers", "referenceId": "ref-0"}]
-    body = {**REVIEW_BODY, "retrySections": ["coverage", "critique"], "acceptedClaims": accepted}
-
-    response = client.post("/api/review", json=body)
-
-    assert response.status_code == 200
-    system, user = fake.calls[0]["messages"]
-    assert system["content"] == REVIEW_PROMPT + review_retry_prompt(["coverage", "critique"], has_accepted_claims=True)
-    assert "omit every other key: coverage, critique." in system["content"]
-    assert "acceptedClaims" in system["content"]
-    assert json.loads(user["content"]) == {**REVIEW_BODY, "acceptedClaims": accepted}
-
-
-@pytest.mark.parametrize(
-    "extra",
-    [
-        {"retrySections": ["claims", "coverage"], "acceptedClaims": []},
-        {"acceptedClaims": []},
-        {"retrySections": ["summary"]},
-        {"retrySections": []},
-    ],
-)
-def test_review_rejects_invalid_retry_requests(client, fake, extra):
-    response = client.post("/api/review", json={**REVIEW_BODY, **extra})
-
-    assert response.status_code == 422
-    assert fake.calls == []
-
-
-def test_review_empty_content_is_an_error(client, fake):
-    fake.content = ""
-
-    response = client.post("/api/review", json=REVIEW_BODY)
-
-    assert response.status_code == 502
-    assert response.json()["error"]["code"] == "empty_completion"
-
-
-def test_review_rejects_unknown_fields(client, fake):
-    response = client.post("/api/review", json={**REVIEW_BODY, "model": "some-expensive-model"})
-
-    assert response.status_code == 422
-    assert fake.calls == []
-
-
-def test_user_key_is_forwarded_but_never_echoed_or_logged(client, fake, caplog):
-    fake.error_before = status_error(openai.AuthenticationError, 401)
-
-    with caplog.at_level("DEBUG"):
-        response = client.post("/api/chat", json=CHAT_BODY, headers={"X-SoCLaaS-Key": "user-key-123"})
-
-    assert fake.calls[0]["api_key"] == "user-key-123"
-    assert response.status_code == 401
-    assert response.json()["error"]["code"] == "invalid_user_key"
-    assert "user-key-123" not in response.text
-    assert "user-key-123" not in caplog.text
-
-
-def test_server_key_rejection_is_not_blamed_on_the_user(client, fake):
+def test_server_key_rejection_is_reported(client, fake):
     fake.error_before = status_error(openai.AuthenticationError, 401)
 
     response = client.post("/api/chat", json=CHAT_BODY)
@@ -314,7 +191,7 @@ def test_server_key_rejection_is_not_blamed_on_the_user(client, fake):
 def test_upstream_rate_limit_passes_retry_after(client, fake):
     fake.error_before = status_error(openai.RateLimitError, 429, {"retry-after": "12"})
 
-    response = client.post("/api/review", json=REVIEW_BODY)
+    response = client.post("/api/assess", json=ASSESS_BODY)
 
     assert response.status_code == 429
     assert response.headers["retry-after"] == "12"
@@ -345,22 +222,17 @@ def test_mid_stream_failure_is_reported_in_band(client, fake):
     assert fake.streams[0].closed
 
 
-def test_malformed_user_key_is_rejected(client, fake):
-    response = client.post("/api/chat", json=CHAT_BODY, headers={"X-SoCLaaS-Key": "has spaces inside"})
-
-    assert response.status_code == 400
-    assert fake.calls == []
-
-
-def test_missing_server_key_requires_a_user_key(make_client):
+def test_missing_server_key_is_reported(make_client):
     client = make_client(soclaas_api_key=None)
 
-    assert client.post("/api/chat", json=CHAT_BODY).json()["error"]["code"] == "no_server_key"
-    assert client.post("/api/chat", json=CHAT_BODY, headers={"X-SoCLaaS-Key": "user-key-123"}).status_code == 200
+    response = client.post("/api/chat", json=CHAT_BODY)
+
+    assert response.status_code == 503
+    assert response.json()["error"]["code"] == "no_server_key"
 
 
 def test_oversized_body_is_rejected(client, fake):
-    response = client.post("/api/review", content=b"x" * 600_000, headers={"Content-Type": "application/json"})
+    response = client.post("/api/assess", content=b"x" * 600_000, headers={"Content-Type": "application/json"})
 
     assert response.status_code == 413
     assert fake.calls == []
@@ -391,7 +263,7 @@ def test_cors_allows_only_configured_origins(client):
             headers={
                 "Origin": origin,
                 "Access-Control-Request-Method": "POST",
-                "Access-Control-Request-Headers": "content-type,x-soclaas-key",
+                "Access-Control-Request-Headers": "content-type",
             },
         )
 
@@ -411,7 +283,7 @@ def test_cors_wildcard_allows_any_origin(make_client):
         headers={
             "Origin": "https://anywhere.example",
             "Access-Control-Request-Method": "POST",
-            "Access-Control-Request-Headers": "content-type,x-soclaas-key",
+            "Access-Control-Request-Headers": "content-type",
         },
     )
 

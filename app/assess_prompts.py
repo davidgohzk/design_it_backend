@@ -1,4 +1,4 @@
-"""Prompts for /api/assess, the /simple review pipeline (spec §6).
+"""Prompts for /api/assess, the review pipeline behind /demo and /simple (spec §6).
 
 The browser verifies every quote the model returns by string match and discards any that
 don't match, so these prompts ask for short verbatim quotes and nothing else as evidence.
