@@ -40,7 +40,7 @@ class PriorAttempt(StrictModel):
 
 
 class DiagramRequest(StrictModel):
-    # caseId and mode are omitted by /demo, which keeps the original diagram prompt.
+    # Without a mode, the original free-form diagram prompt is used; the frontend always sends one.
     caseId: CaseId = "brightpath"
     mode: Literal["sketch", "final"] | None = None
     prompt: str = Field(min_length=1, max_length=8_000)

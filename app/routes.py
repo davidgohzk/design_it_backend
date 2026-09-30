@@ -39,7 +39,7 @@ async def chat(body: ChatRequest, request: Request, llm: LLM = Depends(get_llm))
     )
 
 
-# mode None is /demo's original prompt; "sketch" and "final" are the /simple design doc's.
+# mode None is the original free-form prompt (the frontend no longer sends it); "sketch" and "final" are the design doc's.
 DIAGRAM_PROMPTS = {
     None: (MERMAID_SYSTEM_PROMPT, MERMAID_PROMPT_VERSION),
     "sketch": (SKETCH_SYSTEM_PROMPT, SKETCH_PROMPT_VERSION),

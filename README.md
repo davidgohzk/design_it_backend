@@ -9,7 +9,7 @@ FastAPI service that makes every LLM call for [design_it](https://github.com/dav
 | GET | `/health` | none | `{"status":"ok"}`, used by the Render health check and the frontend warm-up ping |
 | GET | `/health/upstream` | none | `{"reachable","status","latency_ms"}`, checks that this host can reach SoCLaaS |
 | POST | `/api/chat` | `{"caseId"?,"messages":[{"role":"user"\|"assistant","content"}]}` | SSE stream in the case's persona. `caseId` is `"brightpath"` (Sarah, the default) or `"community-room"` (Mei) |
-| POST | `/api/diagram` | `{"caseId"?,"mode"?,"prompt","currentCode"?,"context"?,"priorAttempt"?:{"code","error"}}` | SSE stream (Mermaid source). No `mode` is the /demo prompt; `"sketch"` draws one decision's sketch (`context` lists node IDs and labels already used); `"final"` edits the final diagram |
+| POST | `/api/diagram` | `{"caseId"?,"mode"?,"prompt","currentCode"?,"context"?,"priorAttempt"?:{"code","error"}}` | SSE stream (Mermaid source). No `mode` is the original free-form prompt; `"sketch"` draws one decision's sketch (`context` lists node IDs and labels already used); `"final"` edits the final diagram |
 | POST | `/api/review` | `{"coverageChecklist","caseBrief","transcript","soapReport","extractedReferences"}` | `{"content": "<raw model JSON>"}` |
 | POST | `/api/assess` | `{"caseId","task":"evidence"\|"match"\|"soundness","facts","evidence","retrySections"?}` | `{"content": "<raw model JSON>","model","promptVersion"}`: one step of the /simple review. `facts` must carry exactly the case's fact ids. Uses `SOCLAAS_ASSESS_MODEL` when set, otherwise `SOCLAAS_MODEL` |
 
@@ -49,4 +49,4 @@ The service is defined in `render.yaml`.
 
 Free instances sleep after about 15 minutes of inactivity. The first request after that can take around a minute.
 
-The system prompts live in `app/prompts.py`. `PERSONA_FACTS` must stay in sync with `CASE_REVIEW_FACTS[].personaFact` in the frontend's `src/caseReview.ts`, and the ids in `COMMUNITY_ROOM_FACTS` with the facts in the frontend's `src/cases/community-room.ts`. `PERSONAS` maps each `caseId` to its persona prompt, facts and prompt version.
+The system prompts live in `app/prompts.py`. `PERSONA_FACTS` must stay in sync with the facts in the frontend's `src/cases/brightpath.ts` (`brightpath.<i>` is `PERSONA_FACTS[i]`), and the ids in `COMMUNITY_ROOM_FACTS` with the facts in the frontend's `src/cases/community-room.ts`. `PERSONAS` maps each `caseId` to its persona prompt, facts and prompt version.

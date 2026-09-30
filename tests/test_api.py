@@ -178,7 +178,7 @@ def test_diagram_sketch_mode_sends_decision_and_used_nodes(client, fake):
         },
         {"role": "user", "content": "Decision:\nD4 Bookers get an SMS confirmation"},
     ]
-    assert parse_sse(response.text)[-1] == ("done", {"promptVersion": "diagram-sketch-v1", "model": "test-model"})
+    assert parse_sse(response.text)[-1] == ("done", {"promptVersion": "diagram-sketch-v2", "model": "test-model"})
 
 
 def test_diagram_final_mode_edits_existing_diagram(client, fake):
@@ -201,7 +201,7 @@ def test_diagram_final_mode_edits_existing_diagram(client, fake):
         {"role": "user", "content": "Existing diagram:\nflowchart LR\n  A-->B"},
         {"role": "user", "content": "Add SMS"},
     ]
-    assert parse_sse(response.text)[-1][1]["promptVersion"] == "diagram-final-v1"
+    assert parse_sse(response.text)[-1][1]["promptVersion"] == "diagram-final-v2"
 
 
 def test_diagram_prompts_keep_the_spec_rules():

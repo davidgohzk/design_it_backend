@@ -1,8 +1,8 @@
 """System prompts for the LLM features.
 
 These live on the server so the browser never chooses prompts, models or sampling
-parameters. PERSONA_FACTS must stay in sync with CASE_REVIEW_FACTS[].personaFact in
-design_it_frontend/src/caseReview.ts, which the review checklist still uses.
+parameters. PERSONA_FACTS must stay in sync with the facts in
+design_it_frontend/src/cases/brightpath.ts (fact "brightpath.<i>" is PERSONA_FACTS[i]).
 COMMUNITY_ROOM_FACTS must use the same ids as the facts in
 design_it_frontend/src/cases/community-room.ts.
 
@@ -106,13 +106,13 @@ Rules:
 
 If the user supplies an existing diagram, treat their message as a change request against it and return the COMPLETE updated diagram, not just the changed lines."""
 
-SKETCH_PROMPT_VERSION = "diagram-sketch-v1"
+SKETCH_PROMPT_VERSION = "diagram-sketch-v2"
 
 SKETCH_SYSTEM_PROMPT = """You draw one small Mermaid sketch for a single decision in a system design doc.
 
 Rules:
 - Respond with Mermaid source code ONLY. No prose, no explanation, no code fences.
-- Always start the diagram with "flowchart LR".
+- Always start the diagram with "flowchart TD".
 - Draw only what this decision adds or changes, usually one to four boxes. A single box is fine.
 - Reuse an existing node ID whenever you mean the same component. The IDs and labels already used in other sketches are listed in the message; use exactly those IDs.
 - Give every node a quoted label, for example: Desk["Desk computer"]. Draw a data store as Calendar[("Shared booking calendar")].
@@ -123,13 +123,13 @@ Rules:
 
 If the message includes the decision's current sketch, treat the decision text as the source of truth and return the COMPLETE updated sketch."""
 
-FINAL_PROMPT_VERSION = "diagram-final-v1"
+FINAL_PROMPT_VERSION = "diagram-final-v2"
 
 FINAL_SYSTEM_PROMPT = """You edit the final system diagram of a design doc as Mermaid.
 
 Rules:
 - Respond with Mermaid source code ONLY. No prose, no explanation, no code fences.
-- Always start the diagram with "flowchart LR".
+- Always start the diagram with "flowchart TD".
 - Keep node IDs stable when editing. Never rename an existing ID.
 - When the message lists the nodes in the decision sketches, use exactly those IDs for the same components.
 - Never add a node or connection the engineer did not ask for.
