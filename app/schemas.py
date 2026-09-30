@@ -4,6 +4,9 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 MAX_CHAT_CHARS = 120_000
 
+# Cases with a persona on the server. "brightpath" is the /demo case and the default.
+CaseId = Literal["brightpath", "community-room"]
+
 
 class StrictModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -16,6 +19,7 @@ class ChatTurn(StrictModel):
 
 
 class ChatRequest(StrictModel):
+    caseId: CaseId = "brightpath"
     messages: list[ChatTurn] = Field(min_length=1, max_length=100)
 
     @model_validator(mode="after")

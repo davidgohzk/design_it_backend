@@ -107,7 +107,9 @@ def _sse(data: dict, event: str | None = None) -> str:
     return f"{prefix}data: {json.dumps(data, ensure_ascii=False)}\n\n"
 
 
-async def _completion_events(llm: LLM, slots: UpstreamSlots, messages: list[dict], params: dict) -> AsyncIterator[str]:
+async def _completion_events(
+    llm: LLM, slots: UpstreamSlots, messages: list[dict], params: dict, done_meta: dict
+) -> AsyncIterator[str]:
     slots.acquire()
     stream = None
     try:
@@ -124,7 +126,7 @@ async def _completion_events(llm: LLM, slots: UpstreamSlots, messages: list[dict
                 part = chunk.choices[0].delta.content if chunk.choices else None
                 if part:
                     yield _sse({"delta": part})
-            yield _sse({}, "done")
+            yield _sse(done_meta, "done")
         except openai.APIError as exc:
             error = upstream_error(exc, llm.uses_user_key)
             yield _sse({"code": error.code, "message": error.message}, "error")
@@ -137,9 +139,15 @@ async def _completion_events(llm: LLM, slots: UpstreamSlots, messages: list[dict
             await stream.close()
 
 
-async def stream_completion(llm: LLM, slots: UpstreamSlots, messages: list[dict], **params) -> StreamingResponse:
-    """Stream deltas as SSE. Errors before the first token become real HTTP statuses."""
-    events = _completion_events(llm, slots, messages, params)
+async def stream_completion(
+    llm: LLM, slots: UpstreamSlots, messages: list[dict], *, prompt_version: str, **params
+) -> StreamingResponse:
+    """Stream deltas as SSE. Errors before the first token become real HTTP statuses.
+
+    The final `done` event carries {promptVersion, model}, so a stored transcript can be re-read later.
+    """
+    done_meta = {"promptVersion": prompt_version, "model": llm.model}
+    events = _completion_events(llm, slots, messages, params, done_meta)
     # Opening the upstream stream here means auth/rate-limit failures raise before headers are sent,
     # and the generator is already started, so it is always finalised (slot released, stream closed).
     first = await anext(events)

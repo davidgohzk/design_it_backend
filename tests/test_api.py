@@ -4,7 +4,15 @@ import httpx
 import openai
 import pytest
 
-from app.prompts import CHAT_SYSTEM_PROMPT, MERMAID_SYSTEM_PROMPT, PERSONA_FACTS, REVIEW_PROMPT, review_retry_prompt
+from app.prompts import (
+    CHAT_SYSTEM_PROMPT,
+    MEI_PROMPT,
+    MERMAID_SYSTEM_PROMPT,
+    PERSONA_FACTS,
+    PERSONAS,
+    REVIEW_PROMPT,
+    review_retry_prompt,
+)
 from tests.fakes import status_error
 
 CHAT_BODY = {"messages": [{"role": "user", "content": "Hi Sarah"}]}
@@ -47,7 +55,7 @@ def test_chat_streams_deltas_with_server_prompt_and_params(client, fake):
     assert response.headers["content-type"].startswith("text/event-stream")
     events = parse_sse(response.text)
     assert "".join(data["delta"] for name, data in events if name == "message") == "Hello there\nfriend"
-    assert events[-1] == ("done", {})
+    assert events[-1] == ("done", {"promptVersion": "persona-sarah-v1", "model": "test-model"})
 
     call = fake.calls[0]
     assert call["messages"] == [{"role": "system", "content": CHAT_SYSTEM_PROMPT}, *history]
@@ -56,6 +64,41 @@ def test_chat_streams_deltas_with_server_prompt_and_params(client, fake):
     )
     assert call["api_key"] == "server-test-key"
     assert fake.streams[0].closed
+
+
+def test_chat_uses_the_persona_for_the_case(client, fake):
+    history = [{"role": "assistant", "content": "Hi, I'm Mei"}, {"role": "user", "content": "How many rooms?"}]
+
+    response = client.post("/api/chat", json={"caseId": "community-room", "messages": history})
+
+    assert response.status_code == 200
+    assert fake.calls[0]["messages"] == [{"role": "system", "content": MEI_PROMPT}, *history]
+    assert parse_sse(response.text)[-1] == ("done", {"promptVersion": "persona-mei-v1", "model": "test-model"})
+
+
+def test_chat_without_case_id_keeps_sarah(client, fake):
+    client.post("/api/chat", json=CHAT_BODY)
+
+    assert PERSONAS["brightpath"]["prompt"] is CHAT_SYSTEM_PROMPT
+    assert fake.calls[0]["messages"][0] == {"role": "system", "content": CHAT_SYSTEM_PROMPT}
+
+
+def test_chat_rejects_unknown_case(client, fake):
+    response = client.post("/api/chat", json={"caseId": "nope", **CHAT_BODY})
+
+    assert response.status_code == 422
+    assert fake.calls == []
+
+
+def test_community_room_fact_ids_match_the_frontend_case():
+    # Same ids as design_it_frontend/src/cases/community-room.ts (spec §3.4).
+    assert [fact_id for fact_id, _ in PERSONAS["community-room"]["facts"]] == [
+        "cr.current",
+        "cr.scale",
+        "cr.bookers",
+        "cr.root-cause",
+        "cr.staff",
+    ]
 
 
 def test_chat_prompt_includes_every_persona_fact():

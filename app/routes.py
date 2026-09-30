@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, Request
 from fastapi.responses import StreamingResponse
 
 from .llm import LLM, complete, get_llm, stream_completion
-from .prompts import CHAT_SYSTEM_PROMPT, MERMAID_SYSTEM_PROMPT, REVIEW_PROMPT, review_retry_prompt
+from .prompts import MERMAID_PROMPT_VERSION, MERMAID_SYSTEM_PROMPT, PERSONAS, REVIEW_PROMPT, review_retry_prompt
 from .ratelimit import rate_limited
 from .schemas import ChatRequest, DiagramRequest, ReviewRequest, ReviewResponse
 
@@ -13,10 +13,17 @@ router = APIRouter(prefix="/api", dependencies=[Depends(rate_limited)])
 
 @router.post("/chat")
 async def chat(body: ChatRequest, request: Request, llm: LLM = Depends(get_llm)) -> StreamingResponse:
-    messages = [{"role": "system", "content": CHAT_SYSTEM_PROMPT}]
+    persona = PERSONAS[body.caseId]
+    messages = [{"role": "system", "content": persona["prompt"]}]
     messages += [turn.model_dump() for turn in body.messages]
     return await stream_completion(
-        llm, request.app.state.upstream_slots, messages, temperature=1, top_p=1, max_tokens=8000
+        llm,
+        request.app.state.upstream_slots,
+        messages,
+        prompt_version=persona["promptVersion"],
+        temperature=1,
+        top_p=1,
+        max_tokens=8000,
     )
 
 
@@ -37,7 +44,13 @@ def diagram_messages(body: DiagramRequest) -> list[dict]:
 @router.post("/diagram")
 async def diagram(body: DiagramRequest, request: Request, llm: LLM = Depends(get_llm)) -> StreamingResponse:
     return await stream_completion(
-        llm, request.app.state.upstream_slots, diagram_messages(body), temperature=0.2, top_p=1, max_tokens=4000
+        llm,
+        request.app.state.upstream_slots,
+        diagram_messages(body),
+        prompt_version=MERMAID_PROMPT_VERSION,
+        temperature=0.2,
+        top_p=1,
+        max_tokens=4000,
     )
 
 
