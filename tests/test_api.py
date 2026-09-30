@@ -4,6 +4,15 @@ import httpx
 import openai
 import pytest
 
+from app.assess_prompts import (
+    ASSESS_PROMPT_VERSION,
+    ASSESS_PROMPTS,
+    ASSESS_SECTIONS,
+    EVIDENCE_PROMPT,
+    MATCH_PROMPT,
+    SOUNDNESS_PROMPT,
+    assess_retry_prompt,
+)
 from app.prompts import (
     CHAT_SYSTEM_PROMPT,
     FINAL_SYSTEM_PROMPT,
@@ -408,3 +417,84 @@ def test_cors_wildcard_allows_any_origin(make_client):
 
     assert response.status_code == 200
     assert response.headers["access-control-allow-origin"] == "*"
+
+
+ASSESS_FACTS = [
+    {"id": "cr.current", "label": "Current process", "detail": "Paper book", "disclosure": "given"},
+    {"id": "cr.scale", "label": "Rooms and volume", "detail": "30 a week", "disclosure": "on-ask", "checkSurfaced": True},
+    {"id": "cr.bookers", "label": "Who books", "detail": "Elderly", "disclosure": "on-ask", "checkSurfaced": False},
+    {"id": "cr.root-cause", "label": "Root cause", "detail": "Sticky notes", "disclosure": "on-probe"},
+    {"id": "cr.staff", "label": "Desk", "detail": "Two staff", "disclosure": "on-ask"},
+]
+
+ASSESS_BODY = {
+    "caseId": "community-room",
+    "task": "evidence",
+    "facts": ASSESS_FACTS,
+    "evidence": {"transcript": [{"index": 0, "role": "assistant", "content": "Hi, I'm Mei"}], "designDoc": "## Requirements"},
+}
+
+
+def test_assess_sends_task_prompt_and_evidence(client, fake):
+    fake.content = '{"facts": [], "invented": []}'
+
+    response = client.post("/api/assess", json=ASSESS_BODY)
+
+    assert response.status_code == 200
+    assert response.json() == {"content": fake.content, "model": "test-model", "promptVersion": ASSESS_PROMPT_VERSION}
+    system, user = fake.calls[0]["messages"]
+    assert system == {"role": "system", "content": EVIDENCE_PROMPT}
+    assert json.loads(user["content"]) == {"facts": ASSESS_FACTS, **ASSESS_BODY["evidence"]}
+    assert (fake.calls[0]["temperature"], fake.calls[0]["max_tokens"]) == (0.1, 8000)
+
+
+@pytest.mark.parametrize("task, prompt", [("match", MATCH_PROMPT), ("soundness", SOUNDNESS_PROMPT)])
+def test_assess_picks_the_prompt_for_the_task(client, fake, task, prompt):
+    client.post("/api/assess", json={**ASSESS_BODY, "task": task})
+
+    assert fake.calls[0]["messages"][0]["content"] == prompt
+
+
+def test_assess_uses_the_assess_model_when_set(make_client, fake):
+    client = make_client(soclaas_assess_model="strong-model")
+
+    response = client.post("/api/assess", json=ASSESS_BODY)
+
+    assert fake.calls[0]["model"] == "strong-model"
+    assert response.json()["model"] == "strong-model"
+
+
+def test_assess_partial_retry_asks_only_for_failed_sections(client, fake):
+    client.post("/api/assess", json={**ASSESS_BODY, "task": "soundness", "retrySections": ["sketches"]})
+
+    system = fake.calls[0]["messages"][0]["content"]
+    assert system == SOUNDNESS_PROMPT + assess_retry_prompt(["sketches"])
+    assert "omit every other key: sketches." in system
+
+
+@pytest.mark.parametrize(
+    "extra",
+    [
+        {"facts": ASSESS_FACTS[:4]},
+        {"facts": [{**ASSESS_FACTS[0], "id": "cr.other"}, *ASSESS_FACTS[1:]]},
+        {"retrySections": ["sketches"]},
+        {"task": "critique"},
+        {"caseId": "brightpath"},
+        {"model": "some-expensive-model"},
+    ],
+)
+def test_assess_rejects_invalid_requests(client, fake, extra):
+    response = client.post("/api/assess", json={**ASSESS_BODY, **extra})
+
+    assert response.status_code == 422
+    assert fake.calls == []
+
+
+def test_assess_prompts_include_the_rubric_anchors():
+    assert "A queue because of 30 bookings a week" in SOUNDNESS_PROMPT
+    assert "overstates its quote is weak" in SOUNDNESS_PROMPT
+    assert "shows something its decision doesn't mention is weak" in SOUNDNESS_PROMPT
+    assert "prefer missed over assumed" in EVIDENCE_PROMPT
+    for task, sections in ASSESS_SECTIONS.items():
+        for section in sections:
+            assert f'"{section}"' in ASSESS_PROMPTS[task]

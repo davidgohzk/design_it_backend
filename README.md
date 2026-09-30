@@ -11,6 +11,7 @@ FastAPI service that makes every LLM call for [design_it](https://github.com/dav
 | POST | `/api/chat` | `{"caseId"?,"messages":[{"role":"user"\|"assistant","content"}]}` | SSE stream in the case's persona. `caseId` is `"brightpath"` (Sarah, the default) or `"community-room"` (Mei) |
 | POST | `/api/diagram` | `{"caseId"?,"mode"?,"prompt","currentCode"?,"context"?,"priorAttempt"?:{"code","error"}}` | SSE stream (Mermaid source). No `mode` is the /demo prompt; `"sketch"` draws one decision's sketch (`context` lists node IDs and labels already used); `"final"` edits the final diagram |
 | POST | `/api/review` | `{"coverageChecklist","caseBrief","transcript","soapReport","extractedReferences"}` | `{"content": "<raw model JSON>"}` |
+| POST | `/api/assess` | `{"caseId","task":"evidence"\|"match"\|"soundness","facts","evidence","retrySections"?}` | `{"content": "<raw model JSON>","model","promptVersion"}`: one step of the /simple review. `facts` must carry exactly the case's fact ids. Uses `SOCLAAS_ASSESS_MODEL` when set, otherwise `SOCLAAS_MODEL` |
 
 **Streams.** Each stream sends `data: {"delta":"..."}` events and ends with `event: done`, whose data is `{"promptVersion","model"}`. A failure after streaming has started is sent as `event: error` with `data: {"code","message"}`.
 

@@ -1,8 +1,10 @@
+import dataclasses
 import json
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import StreamingResponse
 
+from .assess_prompts import ASSESS_PROMPT_VERSION, ASSESS_PROMPTS, assess_retry_prompt
 from .llm import LLM, complete, get_llm, stream_completion
 from .prompts import (
     FINAL_PROMPT_VERSION,
@@ -16,7 +18,7 @@ from .prompts import (
     review_retry_prompt,
 )
 from .ratelimit import rate_limited
-from .schemas import ChatRequest, DiagramRequest, ReviewRequest, ReviewResponse
+from .schemas import AssessRequest, AssessResponse, ChatRequest, DiagramRequest, ReviewRequest, ReviewResponse
 
 router = APIRouter(prefix="/api", dependencies=[Depends(rate_limited)])
 
@@ -98,3 +100,20 @@ async def review(body: ReviewRequest, request: Request, llm: LLM = Depends(get_l
     ]
     content = await complete(llm, request.app.state.upstream_slots, messages, temperature=0.1, max_tokens=8000)
     return ReviewResponse(content=content)
+
+
+@router.post("/assess", response_model=AssessResponse)
+async def assess(body: AssessRequest, request: Request, llm: LLM = Depends(get_llm)) -> AssessResponse:
+    """One step of the /simple review. The browser verifies every quote in the reply by string match."""
+    model = request.app.state.settings.soclaas_assess_model or llm.model
+    llm = dataclasses.replace(llm, model=model)
+    system_prompt = ASSESS_PROMPTS[body.task]
+    if body.retrySections:
+        system_prompt += assess_retry_prompt(body.retrySections)
+    evidence = {"facts": [fact.model_dump(exclude_none=True) for fact in body.facts], **body.evidence}
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": json.dumps(evidence, ensure_ascii=False, separators=(",", ":"))},
+    ]
+    content = await complete(llm, request.app.state.upstream_slots, messages, temperature=0.1, max_tokens=8000)
+    return AssessResponse(content=content, model=model, promptVersion=ASSESS_PROMPT_VERSION)
