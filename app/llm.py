@@ -14,19 +14,16 @@ from .errors import ApiError
 
 logger = logging.getLogger("design_it.llm")
 
-KEY_HEADER = "X-SoCLaaS-Key"
-MAX_USER_KEY_LENGTH = 256
-
 STREAM_TIMEOUT = httpx.Timeout(connect=10.0, read=90.0, write=30.0, pool=10.0)
-# A non-streaming completion sends nothing until the whole review is generated.
-REVIEW_TIMEOUT = httpx.Timeout(connect=10.0, read=180.0, write=30.0, pool=10.0)
+# A non-streaming completion (an /api/assess step) sends nothing until the whole reply is generated.
+COMPLETION_TIMEOUT = httpx.Timeout(connect=10.0, read=180.0, write=30.0, pool=10.0)
 
 SSE_HEADERS = {"Cache-Control": "no-cache", "X-Accel-Buffering": "no"}
 
 
 def create_client(settings: Settings) -> AsyncOpenAI:
     return AsyncOpenAI(
-        # The SDK refuses an empty key; requests without a server key are rejected in get_llm.
+        # The SDK refuses an empty key; without a server key, get_llm rejects every request.
         api_key=settings.soclaas_api_key or "missing-server-key",
         base_url=settings.soclaas_base_url,
         timeout=STREAM_TIMEOUT,
@@ -38,27 +35,14 @@ def create_client(settings: Settings) -> AsyncOpenAI:
 class LLM:
     client: AsyncOpenAI
     model: str
-    uses_user_key: bool
 
 
 def get_llm(request: Request) -> LLM:
-    """Use the key from the X-SoCLaaS-Key header when present, otherwise the server key."""
+    """The server's client and model; the browser never supplies a key."""
     settings: Settings = request.app.state.settings
-    base_client: AsyncOpenAI = request.app.state.llm_client
-
-    user_key = (request.headers.get(KEY_HEADER) or "").strip()
-    if user_key:
-        if len(user_key) > MAX_USER_KEY_LENGTH or not all(33 <= ord(char) <= 126 for char in user_key):
-            raise ApiError(400, "invalid_user_key_format", "The SoCLaaS API key you entered is not valid.")
-        return LLM(base_client.with_options(api_key=user_key), settings.soclaas_model, True)
-
     if not settings.soclaas_api_key:
-        raise ApiError(
-            503,
-            "no_server_key",
-            "The server has no SoCLaaS API key configured. Enter your own key to continue.",
-        )
-    return LLM(base_client, settings.soclaas_model, False)
+        raise ApiError(503, "no_server_key", "The server has no SoCLaaS API key configured.")
+    return LLM(request.app.state.llm_client, settings.soclaas_model)
 
 
 class UpstreamSlots:
@@ -77,13 +61,11 @@ class UpstreamSlots:
         self.active = max(0, self.active - 1)
 
 
-def upstream_error(exc: Exception, uses_user_key: bool) -> ApiError:
+def upstream_error(exc: Exception) -> ApiError:
     """Translate an SDK error without passing upstream text through (it can echo part of the key)."""
     logger.warning("Upstream call failed: %s (status=%s)", type(exc).__name__, getattr(exc, "status_code", None))
 
     if isinstance(exc, (openai.AuthenticationError, openai.PermissionDeniedError)):
-        if uses_user_key:
-            return ApiError(401, "invalid_user_key", "SoCLaaS rejected the API key you entered.")
         return ApiError(502, "server_key_rejected", "The server's SoCLaaS key was rejected. Please contact the site owner.")
     if isinstance(exc, openai.RateLimitError):
         retry_after = exc.response.headers.get("retry-after")
@@ -107,7 +89,9 @@ def _sse(data: dict, event: str | None = None) -> str:
     return f"{prefix}data: {json.dumps(data, ensure_ascii=False)}\n\n"
 
 
-async def _completion_events(llm: LLM, slots: UpstreamSlots, messages: list[dict], params: dict) -> AsyncIterator[str]:
+async def _completion_events(
+    llm: LLM, slots: UpstreamSlots, messages: list[dict], params: dict, done_meta: dict
+) -> AsyncIterator[str]:
     slots.acquire()
     stream = None
     try:
@@ -116,7 +100,7 @@ async def _completion_events(llm: LLM, slots: UpstreamSlots, messages: list[dict
                 model=llm.model, messages=messages, stream=True, **params
             )
         except openai.APIError as exc:
-            raise upstream_error(exc, llm.uses_user_key) from None
+            raise upstream_error(exc) from None
 
         yield ": connected\n\n"
         try:
@@ -124,9 +108,9 @@ async def _completion_events(llm: LLM, slots: UpstreamSlots, messages: list[dict
                 part = chunk.choices[0].delta.content if chunk.choices else None
                 if part:
                     yield _sse({"delta": part})
-            yield _sse({}, "done")
+            yield _sse(done_meta, "done")
         except openai.APIError as exc:
-            error = upstream_error(exc, llm.uses_user_key)
+            error = upstream_error(exc)
             yield _sse({"code": error.code, "message": error.message}, "error")
         except Exception as exc:
             logger.warning("Stream failed: %s", type(exc).__name__)
@@ -137,9 +121,15 @@ async def _completion_events(llm: LLM, slots: UpstreamSlots, messages: list[dict
             await stream.close()
 
 
-async def stream_completion(llm: LLM, slots: UpstreamSlots, messages: list[dict], **params) -> StreamingResponse:
-    """Stream deltas as SSE. Errors before the first token become real HTTP statuses."""
-    events = _completion_events(llm, slots, messages, params)
+async def stream_completion(
+    llm: LLM, slots: UpstreamSlots, messages: list[dict], *, prompt_version: str, **params
+) -> StreamingResponse:
+    """Stream deltas as SSE. Errors before the first token become real HTTP statuses.
+
+    The final `done` event carries {promptVersion, model}, so a stored transcript can be re-read later.
+    """
+    done_meta = {"promptVersion": prompt_version, "model": llm.model}
+    events = _completion_events(llm, slots, messages, params, done_meta)
     # Opening the upstream stream here means auth/rate-limit failures raise before headers are sent,
     # and the generator is already started, so it is always finalised (slot released, stream closed).
     first = await anext(events)
@@ -156,10 +146,10 @@ async def complete(llm: LLM, slots: UpstreamSlots, messages: list[dict], **param
     slots.acquire()
     try:
         completion = await llm.client.chat.completions.create(
-            model=llm.model, messages=messages, timeout=REVIEW_TIMEOUT, **params
+            model=llm.model, messages=messages, timeout=COMPLETION_TIMEOUT, **params
         )
     except openai.APIError as exc:
-        raise upstream_error(exc, llm.uses_user_key) from None
+        raise upstream_error(exc) from None
     finally:
         slots.release()
 

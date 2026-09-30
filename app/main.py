@@ -9,7 +9,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from .config import Settings
 from .errors import ApiError, error_body
-from .llm import KEY_HEADER, UpstreamSlots, create_client
+from .llm import UpstreamSlots, create_client
 from .ratelimit import RateLimiter, rate_limited
 from .routes import router
 
@@ -67,7 +67,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         CORSMiddleware,
         allow_origins=list(settings.allowed_origins),
         allow_methods=["GET", "POST"],
-        allow_headers=["Content-Type", KEY_HEADER],
+        allow_headers=["Content-Type"],
         expose_headers=["Retry-After"],
         max_age=600,
     )

@@ -58,9 +58,6 @@ class FakeClient:
         self.api_key = api_key
         self.chat = SimpleNamespace(completions=FakeCompletions(self))
 
-    def with_options(self, **options) -> "FakeClient":
-        return FakeClient(self.state, options.get("api_key", self.api_key))
-
 
 def status_error(cls, status: int, headers: dict[str, str] | None = None) -> Exception:
     request = httpx.Request("POST", "http://soclaas.test/v1/chat/completions")

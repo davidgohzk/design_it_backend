@@ -1,27 +1,41 @@
+import dataclasses
 import json
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import StreamingResponse
 
+from .assess_prompts import ASSESS_PROMPT_VERSION, ASSESS_PROMPTS, assess_retry_prompt
 from .llm import LLM, complete, get_llm, stream_completion
-from .prompts import CHAT_SYSTEM_PROMPT, MERMAID_SYSTEM_PROMPT, REVIEW_PROMPT, review_retry_prompt
+from .prompts import DIAGRAM_PROMPT_VERSION, DIAGRAM_SYSTEM_PROMPT, PERSONAS
 from .ratelimit import rate_limited
-from .schemas import ChatRequest, DiagramRequest, ReviewRequest, ReviewResponse
+from .schemas import AssessRequest, AssessResponse, ChatRequest, DiagramRequest
 
 router = APIRouter(prefix="/api", dependencies=[Depends(rate_limited)])
 
 
 @router.post("/chat")
 async def chat(body: ChatRequest, request: Request, llm: LLM = Depends(get_llm)) -> StreamingResponse:
-    messages = [{"role": "system", "content": CHAT_SYSTEM_PROMPT}]
+    persona = PERSONAS[body.caseId]
+    messages = [{"role": "system", "content": persona["prompt"]}]
     messages += [turn.model_dump() for turn in body.messages]
     return await stream_completion(
-        llm, request.app.state.upstream_slots, messages, temperature=1, top_p=1, max_tokens=8000
+        llm,
+        request.app.state.upstream_slots,
+        messages,
+        prompt_version=persona["promptVersion"],
+        temperature=1,
+        top_p=1,
+        max_tokens=8000,
     )
 
 
 def diagram_messages(body: DiagramRequest) -> list[dict]:
-    messages = [{"role": "system", "content": MERMAID_SYSTEM_PROMPT}]
+    messages = [{"role": "system", "content": DIAGRAM_SYSTEM_PROMPT}]
+    if body.context and body.context.strip():
+        messages.append({
+            "role": "user",
+            "content": f"Nodes in the decision sketches (use these IDs for the same components):\n{body.context.strip()}",
+        })
     if body.currentCode:
         messages.append({"role": "user", "content": f"Existing diagram:\n{body.currentCode}"})
     messages.append({"role": "user", "content": body.prompt})
@@ -37,22 +51,28 @@ def diagram_messages(body: DiagramRequest) -> list[dict]:
 @router.post("/diagram")
 async def diagram(body: DiagramRequest, request: Request, llm: LLM = Depends(get_llm)) -> StreamingResponse:
     return await stream_completion(
-        llm, request.app.state.upstream_slots, diagram_messages(body), temperature=0.2, top_p=1, max_tokens=4000
+        llm,
+        request.app.state.upstream_slots,
+        diagram_messages(body),
+        prompt_version=DIAGRAM_PROMPT_VERSION,
+        temperature=0.2,
+        top_p=1,
+        max_tokens=4000,
     )
 
 
-@router.post("/review", response_model=ReviewResponse)
-async def review(body: ReviewRequest, request: Request, llm: LLM = Depends(get_llm)) -> ReviewResponse:
-    # retrySections becomes instructions, not evidence; acceptedClaims is evidence only on a partial retry.
-    exclude = {"retrySections"} if body.acceptedClaims is not None else {"retrySections", "acceptedClaims"}
-    # Compact separators match JSON.stringify, so the prompt is identical to the old browser call.
-    evidence = json.dumps(body.model_dump(exclude=exclude), ensure_ascii=False, separators=(",", ":"))
-    system_prompt = REVIEW_PROMPT
+@router.post("/assess", response_model=AssessResponse)
+async def assess(body: AssessRequest, request: Request, llm: LLM = Depends(get_llm)) -> AssessResponse:
+    """One step of the review. The browser verifies every quote in the reply by string match."""
+    model = request.app.state.settings.soclaas_assess_model or llm.model
+    llm = dataclasses.replace(llm, model=model)
+    system_prompt = ASSESS_PROMPTS[body.task]
     if body.retrySections:
-        system_prompt += review_retry_prompt(body.retrySections, has_accepted_claims=body.acceptedClaims is not None)
+        system_prompt += assess_retry_prompt(body.retrySections)
+    evidence = {"facts": [fact.model_dump(exclude_none=True) for fact in body.facts], **body.evidence}
     messages = [
         {"role": "system", "content": system_prompt},
-        {"role": "user", "content": evidence},
+        {"role": "user", "content": json.dumps(evidence, ensure_ascii=False, separators=(",", ":"))},
     ]
     content = await complete(llm, request.app.state.upstream_slots, messages, temperature=0.1, max_tokens=8000)
-    return ReviewResponse(content=content)
+    return AssessResponse(content=content, model=model, promptVersion=ASSESS_PROMPT_VERSION)

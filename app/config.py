@@ -12,6 +12,8 @@ def _int_env(name: str, default: int) -> int:
 @dataclass(frozen=True)
 class Settings:
     soclaas_model: str
+    # /api/assess can use a different (e.g. stronger) model; empty means soclaas_model.
+    soclaas_assess_model: str = ""
     soclaas_api_key: str | None = None
     soclaas_base_url: str = DEFAULT_SOCLAAS_BASE_URL
     allowed_origins: tuple[str, ...] = ()
@@ -32,6 +34,7 @@ class Settings:
         )
         return cls(
             soclaas_model=model,
+            soclaas_assess_model=os.environ.get("SOCLAAS_ASSESS_MODEL", "").strip(),
             soclaas_api_key=os.environ.get("SOCLAAS_API_KEY", "").strip() or None,
             soclaas_base_url=os.environ.get("SOCLAAS_BASE_URL", "").strip().rstrip("/") or DEFAULT_SOCLAAS_BASE_URL,
             allowed_origins=origins,
