@@ -5,7 +5,6 @@ import openai
 import pytest
 
 from app.assess_prompts import (
-    ASSESS_PROMPT_VERSION,
     ASSESS_PROMPTS,
     ASSESS_SECTIONS,
     EVIDENCE_PROMPT,
@@ -47,7 +46,7 @@ def test_chat_streams_deltas_with_server_prompt_and_params(client, fake):
     assert response.headers["content-type"].startswith("text/event-stream")
     events = parse_sse(response.text)
     assert "".join(data["delta"] for name, data in events if name == "message") == "Hello there\nfriend"
-    assert events[-1] == ("done", {"promptVersion": "persona-sarah-v1", "model": "test-model"})
+    assert events[-1] == ("done", {"model": "test-model"})
 
     call = fake.calls[0]
     assert call["messages"] == [{"role": "system", "content": CHAT_SYSTEM_PROMPT}, *history]
@@ -65,7 +64,7 @@ def test_chat_uses_the_persona_for_the_case(client, fake):
 
     assert response.status_code == 200
     assert fake.calls[0]["messages"] == [{"role": "system", "content": MEI_PROMPT}, *history]
-    assert parse_sse(response.text)[-1] == ("done", {"promptVersion": "persona-mei-v1", "model": "test-model"})
+    assert parse_sse(response.text)[-1] == ("done", {"model": "test-model"})
 
 
 def test_chat_requires_a_case(client, fake):
@@ -156,7 +155,7 @@ def test_diagram_edits_existing_diagram_with_the_sketch_nodes(client, fake):
         {"role": "user", "content": "Existing diagram:\nflowchart LR\n  A-->B"},
         {"role": "user", "content": "Add SMS"},
     ]
-    assert parse_sse(response.text)[-1][1]["promptVersion"] == "diagram-final-v2"
+    assert parse_sse(response.text)[-1] == ("done", {"model": "test-model"})
 
 
 def test_diagram_prompt_keeps_the_spec_rules():
@@ -313,7 +312,7 @@ def test_assess_sends_task_prompt_and_evidence(client, fake):
     response = client.post("/api/assess", json=ASSESS_BODY)
 
     assert response.status_code == 200
-    assert response.json() == {"content": fake.content, "model": "test-model", "promptVersion": ASSESS_PROMPT_VERSION}
+    assert response.json() == {"content": fake.content, "model": "test-model"}
     system, user = fake.calls[0]["messages"]
     assert system == {"role": "system", "content": EVIDENCE_PROMPT}
     assert json.loads(user["content"]) == {"facts": ASSESS_FACTS, **ASSESS_BODY["evidence"]}
@@ -366,6 +365,11 @@ def test_assess_prompts_include_the_rubric_anchors():
     assert "A queue because of 30 bookings a week" in SOUNDNESS_PROMPT
     assert "overstates its quote is weak" in SOUNDNESS_PROMPT
     assert "shows something its decision doesn't mention is weak" in SOUNDNESS_PROMPT
+    assert "both add a confirmation email are similar" in SOUNDNESS_PROMPT
+    assert "Never group items of different kinds" in SOUNDNESS_PROMPT
+    assert '"Trade-off: none significant." on a real choice is a weak decision item' in SOUNDNESS_PROMPT
+    assert "is a weak requirement item: nobody can check it" in SOUNDNESS_PROMPT
+    assert "is unsound in sketchIntegration: it never made it into the design" in SOUNDNESS_PROMPT
     assert "prefer missed over assumed" in EVIDENCE_PROMPT
     for task, sections in ASSESS_SECTIONS.items():
         for section in sections:

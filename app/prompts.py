@@ -5,9 +5,6 @@ parameters. PERSONA_FACTS must stay in sync with the facts in
 design_it_frontend/src/cases/brightpath.ts (fact "brightpath.<i>" is PERSONA_FACTS[i]).
 COMMUNITY_ROOM_FACTS must use the same ids as the facts in
 design_it_frontend/src/cases/community-room.ts.
-
-Every prompt has a version string. Responses report it so a stored review can be re-read
-against the exact prompt that produced it; bump it whenever the prompt text changes.
 """
 
 PERSONA_FACTS = (
@@ -82,18 +79,14 @@ PERSONAS = {
     "brightpath": {
         "prompt": CHAT_SYSTEM_PROMPT,
         "facts": tuple((f"brightpath.{index}", fact) for index, fact in enumerate(PERSONA_FACTS)),
-        "promptVersion": "persona-sarah-v1",
     },
     "community-room": {
         "prompt": MEI_PROMPT,
         "facts": COMMUNITY_ROOM_FACTS,
-        "promptVersion": "persona-mei-v1",
     },
 }
 
 # The diagram helper: turns the engineer's description into the final diagram, editing its last one.
-DIAGRAM_PROMPT_VERSION = "diagram-final-v2"
-
 DIAGRAM_SYSTEM_PROMPT = """You edit the final system diagram of a design doc as Mermaid.
 
 Rules:

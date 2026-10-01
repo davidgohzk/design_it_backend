@@ -4,9 +4,9 @@ import json
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import StreamingResponse
 
-from .assess_prompts import ASSESS_PROMPT_VERSION, ASSESS_PROMPTS, assess_retry_prompt
+from .assess_prompts import ASSESS_PROMPTS, assess_retry_prompt
 from .llm import LLM, complete, get_llm, stream_completion
-from .prompts import DIAGRAM_PROMPT_VERSION, DIAGRAM_SYSTEM_PROMPT, PERSONAS
+from .prompts import DIAGRAM_SYSTEM_PROMPT, PERSONAS
 from .ratelimit import rate_limited
 from .schemas import AssessRequest, AssessResponse, ChatRequest, DiagramRequest
 
@@ -22,7 +22,6 @@ async def chat(body: ChatRequest, request: Request, llm: LLM = Depends(get_llm))
         llm,
         request.app.state.upstream_slots,
         messages,
-        prompt_version=persona["promptVersion"],
         temperature=1,
         top_p=1,
         max_tokens=8000,
@@ -54,7 +53,6 @@ async def diagram(body: DiagramRequest, request: Request, llm: LLM = Depends(get
         llm,
         request.app.state.upstream_slots,
         diagram_messages(body),
-        prompt_version=DIAGRAM_PROMPT_VERSION,
         temperature=0.2,
         top_p=1,
         max_tokens=4000,
@@ -75,4 +73,4 @@ async def assess(body: AssessRequest, request: Request, llm: LLM = Depends(get_l
         {"role": "user", "content": json.dumps(evidence, ensure_ascii=False, separators=(",", ":"))},
     ]
     content = await complete(llm, request.app.state.upstream_slots, messages, temperature=0.1, max_tokens=8000)
-    return AssessResponse(content=content, model=model, promptVersion=ASSESS_PROMPT_VERSION)
+    return AssessResponse(content=content, model=model)
