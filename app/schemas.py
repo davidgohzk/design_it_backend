@@ -81,4 +81,3 @@ class AssessRequest(StrictModel):
 class AssessResponse(BaseModel):
     content: str
     model: str
-    promptVersion: str

@@ -122,13 +122,13 @@ async def _completion_events(
 
 
 async def stream_completion(
-    llm: LLM, slots: UpstreamSlots, messages: list[dict], *, prompt_version: str, **params
+    llm: LLM, slots: UpstreamSlots, messages: list[dict], **params
 ) -> StreamingResponse:
     """Stream deltas as SSE. Errors before the first token become real HTTP statuses.
 
-    The final `done` event carries {promptVersion, model}, so a stored transcript can be re-read later.
+    The final `done` event carries {model}, so a stored transcript records which model answered.
     """
-    done_meta = {"promptVersion": prompt_version, "model": llm.model}
+    done_meta = {"model": llm.model}
     events = _completion_events(llm, slots, messages, params, done_meta)
     # Opening the upstream stream here means auth/rate-limit failures raise before headers are sent,
     # and the generator is already started, so it is always finalised (slot released, stream closed).
