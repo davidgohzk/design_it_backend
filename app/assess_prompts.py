@@ -75,7 +75,8 @@ Return one JSON object only, with this exact shape:
   "requirementItems": [{"id": "R1", "rating": "sound | weak | unsound", "reason": "one short sentence"}],
   "decisionItems": [{"id": "D1", "rating": "sound | weak | unsound", "reason": "one short sentence"}],
   "sketchItems": [{"id": "D1", "rating": "sound | weak | unsound", "reason": "one short sentence"}],
-  "sketchIntegration": [{"id": "D1", "rating": "sound | weak | unsound", "reason": "one short sentence"}]
+  "sketchIntegration": [{"id": "D1", "rating": "sound | weak | unsound", "reason": "one short sentence"}],
+  "overall": {"summary": "one or two sentences", "strengths": [{"point": "one short sentence", "refs": ["D1", "Calendar"]}], "weaknesses": [{"point": "one short sentence", "refs": ["R2"]}], "improvements": [{"point": "one short sentence", "refs": []}]}
 }
 
 Rules:
@@ -91,6 +92,9 @@ The last three sections judge each item on its own, apart from what it cites or 
 - decisionItems: one item per decision listed. Is the choice itself a sound engineering choice, with an honest trade-off? sound = a clear, workable choice whose trade-off names a real cost; weak = the trade-off is "none" or hides a real cost, or the choice is vague; unsound = there is no choice, or the choice cannot work.
 - sketchItems: one item per decision that has a sketch. Is the sketch clear on its own: every box labelled, connections pointing the right way, nothing irrelevant? sound = clear; weak = an unlabelled box, a connection with no clear direction or meaning, or clutter; unsound = unreadable.
 - sketchIntegration: one item per decision that has a sketch. Does it make sense to put this sketch into the final diagram: are its parts joined to the rest of the system where they belong, with what the sketch means unchanged? sound = it fits; weak = joined oddly, a needed connection missing, or a part's role blurred; unsound = it contradicts the rest of the design, or is left out or floating.
+
+The overall section judges the design as a whole, as a senior reviewer would after reading everything:
+- overall: is this a good implementation for this client? summary gives the verdict in one or two sentences. strengths lists 1 to 4 things the design does well; weaknesses lists 1 to 4 things that are not good enough; improvements lists 1 to 4 concrete next steps, most valuable first. Weigh fit to the client's scale, budget and people, pieces the client needs that the design lacks, over-engineering, and whether the parts work together. Each point is one specific sentence about this design, not a repeat of a single item's rating. refs lists the R#, A# or D# ids or final-diagram node ids the point is about (empty when it is about none).
 
 Anchors:
 - "A queue because of 30 bookings a week" is unsound: the volume argues against it.
@@ -125,6 +129,7 @@ ASSESS_SECTIONS = {
         "decisionItems",
         "sketchItems",
         "sketchIntegration",
+        "overall",
     ),
 }
 
