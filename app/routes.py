@@ -76,5 +76,6 @@ async def assess(body: AssessRequest, request: Request, llm: LLM = Depends(get_l
         {"role": "system", "content": system_prompt},
         {"role": "user", "content": json.dumps(evidence, ensure_ascii=False, separators=(",", ":"))},
     ]
-    content = await complete(llm, request.app.state.upstream_slots, messages, temperature=0.1, max_tokens=8000)
+    # The judge runs at temperature 0, so repeated runs differ only where the model is unsure.
+    content = await complete(llm, request.app.state.upstream_slots, messages, temperature=0, max_tokens=8000)
     return AssessResponse(content=content, model=model)

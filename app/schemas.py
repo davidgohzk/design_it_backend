@@ -52,7 +52,7 @@ class DiagramRequest(StrictModel):
     priorAttempt: PriorAttempt | None = None
 
 
-AssessTask = Literal["evidence", "match", "soundness"]
+AssessTask = Literal["evidence", "match", "soundness", "assertion", "justify", "fit"]
 
 
 class AssessFact(StrictModel):
