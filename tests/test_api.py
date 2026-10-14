@@ -150,7 +150,11 @@ def test_diagram_edits_existing_diagram_with_the_sketch_nodes(client, fake):
 def test_diagram_prompt_keeps_the_spec_rules():
     assert "Keep node IDs stable when editing" in DIAGRAM_SYSTEM_PROMPT
     assert "Never add a node or connection the engineer did not ask for" in DIAGRAM_SYSTEM_PROMPT
-    assert "(actor)" in DIAGRAM_SYSTEM_PROMPT
+    # C4-style node types and labelled arrows (WP5).
+    for node_type in ("[person]", "[system]", "[container]", "[datastore]", "[external]"):
+        assert node_type in DIAGRAM_SYSTEM_PROMPT
+    assert "Label every connection" in DIAGRAM_SYSTEM_PROMPT
+    assert "Always start the diagram with" not in DIAGRAM_SYSTEM_PROMPT
 
 
 def test_diagram_rejects_unknown_fields(client, fake):

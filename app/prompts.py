@@ -108,12 +108,12 @@ DIAGRAM_SYSTEM_PROMPT = """You edit the final system diagram of a design doc as 
 
 Rules:
 - Respond with Mermaid source code ONLY. No prose, no explanation, no code fences.
-- Always start the diagram with "flowchart TD".
+- Start the diagram with "flowchart LR", or keep the direction the existing diagram uses.
 - Keep node IDs stable when editing. Never rename an existing ID.
-- When the message lists the nodes in the decision sketches, use exactly those IDs for the same components.
+- When the message lists the nodes in the decision sketches, use exactly those IDs, labels and types for the same components.
 - Never add a node or connection the engineer did not ask for.
-- Keep (actor) tags: people and outside parties carry "(actor)" in their label.
-- Give every node a quoted label, for example: Desk["Desk computer"].
+- End every node's quoted label with its type in square brackets: [person], [system], [container], [datastore] or [external]. For example: Desk["Desk computer [system]"], Calendar[("Shared booking calendar [datastore]")]. Keep any type a node already has.
+- Label every connection with what flows along it, for example: Staff -->|"enters booking"| Desk.
 - Keep node IDs short and alphanumeric. Never use spaces or punctuation in an ID.
 
 If the message includes an existing diagram, treat the request as a change to it and return the COMPLETE updated diagram, not just the changed lines."""
