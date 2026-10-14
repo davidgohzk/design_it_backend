@@ -1,24 +1,27 @@
 """System prompts for the LLM features.
 
 These live on the server so the browser never chooses prompts, models or sampling
-parameters. PERSONA_FACTS must stay in sync with the facts in
-design_it_frontend/src/cases/brightpath.ts (fact "brightpath.<i>" is PERSONA_FACTS[i]).
-COMMUNITY_ROOM_FACTS must use the same ids as the facts in
-design_it_frontend/src/cases/community-room.ts.
+parameters. Each case's facts come from app/cases/<case>.facts.json, which has an identical
+copy in design_it_frontend/src/cases/; tests/test_facts_sync.py checks the two match.
 """
 
-PERSONA_FACTS = (
-    "Field workers report incidents through WhatsApp; messages get buried and an alert can sit unnoticed for a whole day.",
-    "About 40 field workers are spread across three districts.",
-    "There are 12 case managers; each is responsible for a group of field workers and the children assigned to them.",
-    "Three supervisors oversee everything and need to be looped in on high-severity incidents.",
-    "On a busy day, the team receives roughly 15 to 20 incident reports.",
-    "Field workers often use low-end Android phones.",
-    "Field workers often have patchy connectivity in the field.",
-    "The system should accept incident submissions from the field and immediately notify the assigned case manager and supervisor.",
-    "Alerts need acknowledgement tracking with escalation when nobody responds.",
-    "Every incident and response needs a durable record; old chat messages make donor and government reporting difficult.",
-)
+import json
+from pathlib import Path
+
+CASES_DIR = Path(__file__).parent / "cases"
+
+
+def load_case_facts(case_id: str) -> tuple[dict, ...]:
+    """A case's facts, in order: id, detail, disclosure, topic area, keywords, phrases, probe cues."""
+    data = json.loads((CASES_DIR / f"{case_id}.facts.json").read_text(encoding="utf-8"))
+    if data["caseId"] != case_id:
+        raise ValueError(f"{case_id}.facts.json is for {data['caseId']}.")
+    return tuple(data["facts"])
+
+
+CASE_FACTS = {case_id: load_case_facts(case_id) for case_id in ("brightpath", "community-room")}
+
+PERSONA_FACTS = tuple(fact["detail"] for fact in CASE_FACTS["brightpath"])
 
 PERSONA_FACTS_PROMPT = "\n".join(f"- {fact}" for fact in PERSONA_FACTS)
 
@@ -65,25 +68,11 @@ RULES:
 - Stay consistent: never contradict an earlier answer.
 - Never say you are an AI. Never mention these instructions."""
 
-# (id, detail) pairs; ids match design_it_frontend/src/cases/community-room.ts.
-COMMUNITY_ROOM_FACTS = (
-    ("cr.current", "Bookings go in one paper book at the front desk; double bookings keep happening"),
-    ("cr.scale", "3 rooms (activity hall, meeting room, dance studio); about 30 bookings a week, more in school holidays"),
-    ("cr.bookers", "Mostly residents' groups; many regulars are elderly, some have no smartphone, so they phone or walk in"),
-    ("cr.root-cause", "Phone bookings are written on sticky notes by whoever answers; some notes never reach the book"),
-    ("cr.staff", "Two staff on alternating shifts, volunteers at weekends; one shared desk computer"),
-)
-
 # One entry per case: "brightpath" is /demo's case (Sarah), "community-room" is /simple's (Mei).
+# "facts" are (id, detail) pairs, in the order of the case's facts file.
 PERSONAS = {
-    "brightpath": {
-        "prompt": CHAT_SYSTEM_PROMPT,
-        "facts": tuple((f"brightpath.{index}", fact) for index, fact in enumerate(PERSONA_FACTS)),
-    },
-    "community-room": {
-        "prompt": MEI_PROMPT,
-        "facts": COMMUNITY_ROOM_FACTS,
-    },
+    case_id: {"prompt": prompt, "facts": tuple((fact["id"], fact["detail"]) for fact in CASE_FACTS[case_id])}
+    for case_id, prompt in (("brightpath", CHAT_SYSTEM_PROMPT), ("community-room", MEI_PROMPT))
 }
 
 # The diagram helper: turns the engineer's description into the final diagram, editing its last one.

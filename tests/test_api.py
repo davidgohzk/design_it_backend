@@ -81,17 +81,6 @@ def test_chat_rejects_unknown_case(client, fake):
     assert fake.calls == []
 
 
-def test_community_room_fact_ids_match_the_frontend_case():
-    # Same ids as design_it_frontend/src/cases/community-room.ts (spec §3.4).
-    assert [fact_id for fact_id, _ in PERSONAS["community-room"]["facts"]] == [
-        "cr.current",
-        "cr.scale",
-        "cr.bookers",
-        "cr.root-cause",
-        "cr.staff",
-    ]
-
-
 def test_chat_prompt_includes_every_persona_fact():
     for fact in PERSONA_FACTS:
         assert f"- {fact}" in CHAT_SYSTEM_PROMPT

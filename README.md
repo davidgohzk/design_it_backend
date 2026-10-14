@@ -46,4 +46,4 @@ The service is defined in `render.yaml`.
 
 Free instances sleep after about 15 minutes of inactivity. The first request after that can take around a minute.
 
-The system prompts live in `app/prompts.py`. `PERSONA_FACTS` must stay in sync with the facts in the frontend's `src/cases/brightpath.ts` (`brightpath.<i>` is `PERSONA_FACTS[i]`), and the ids in `COMMUNITY_ROOM_FACTS` with the facts in the frontend's `src/cases/community-room.ts`. `PERSONAS` maps each `caseId` to its persona prompt and facts.
+The system prompts live in `app/prompts.py`. Each case's facts come from `app/cases/<case>.facts.json`; the frontend keeps an identical copy in `src/cases/`, and both repos test their cases against it (`tests/test_facts_sync.py` here, `src/cases/facts.sync.test.ts` there). Change a facts file in both repos together. `PERSONAS` maps each `caseId` to its persona prompt and facts.
