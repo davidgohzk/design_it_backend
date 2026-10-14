@@ -26,7 +26,7 @@
       "cues": ["12", "twelve", "responsible for", "assigned"],
       "topicArea": "Who owns each child's case",
       "keywords": ["case manager", "case managers", "responsible", "assigned", "who handles", "owns", "how big"],
-      "signaturePhrases": ["12 case managers", "twelve case managers", "case managers"]
+      "signaturePhrases": ["12 case managers", "twelve case managers", "case managers", "responsible for a group", "each case manager"]
     },
     {
       "id": "brightpath.3",
@@ -53,7 +53,7 @@
       "cues": ["android", "low-end", "cheap phone"],
       "topicArea": "Field workers' phones",
       "keywords": ["phone", "phones", "device", "devices", "android", "smartphone"],
-      "signaturePhrases": ["low-end android", "android phones", "android"]
+      "signaturePhrases": ["low-end android", "android phones", "android", "low end android", "android device"]
     },
     {
       "id": "brightpath.6",
