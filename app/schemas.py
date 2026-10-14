@@ -52,7 +52,7 @@ class DiagramRequest(StrictModel):
     priorAttempt: PriorAttempt | None = None
 
 
-AssessTask = Literal["evidence", "match", "soundness", "assertion", "justify", "fit"]
+AssessTask = Literal["match", "assertion", "justify", "fit"]
 
 
 class AssessFact(StrictModel):
@@ -60,8 +60,6 @@ class AssessFact(StrictModel):
     label: str = Field(max_length=500)
     detail: str = Field(max_length=2_000)
     disclosure: Literal["given", "on-ask", "on-probe"]
-    # Evidence task only: false when no client message contains any of the fact's cues.
-    checkSurfaced: bool | None = None
 
 
 class AssessRequest(StrictModel):
