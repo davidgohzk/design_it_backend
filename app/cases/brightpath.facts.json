@@ -5,6 +5,7 @@
       "id": "brightpath.0",
       "detail": "Field workers report incidents through WhatsApp; messages get buried and an alert can sit unnoticed for a whole day.",
       "disclosure": "given",
+      "cues": ["whatsapp", "buried", "unnoticed"],
       "topicArea": "Current reporting process",
       "keywords": ["report", "reporting", "whatsapp", "problem", "process", "today"],
       "signaturePhrases": ["whatsapp", "messages get buried"]
@@ -13,6 +14,7 @@
       "id": "brightpath.1",
       "detail": "About 40 field workers are spread across three districts.",
       "disclosure": "on-ask",
+      "cues": ["40", "forty", "district"],
       "topicArea": "Field team size",
       "keywords": ["field workers", "how many", "team", "districts", "scale"],
       "signaturePhrases": ["40 field workers", "three districts"]
@@ -21,6 +23,7 @@
       "id": "brightpath.2",
       "detail": "There are 12 case managers; each is responsible for a group of field workers and the children assigned to them.",
       "disclosure": "on-ask",
+      "cues": ["12", "twelve", "responsible for", "assigned"],
       "topicArea": "Who owns each child's case",
       "keywords": ["case manager", "case managers", "responsible", "assigned", "who handles", "owns"],
       "signaturePhrases": ["12 case managers", "twelve case managers"]
@@ -29,22 +32,25 @@
       "id": "brightpath.3",
       "detail": "Three supervisors oversee everything and need to be looped in on high-severity incidents.",
       "disclosure": "on-ask",
+      "cues": ["supervisor", "high-severity", "high severity"],
       "topicArea": "Supervisors and severity",
-      "keywords": ["supervisor", "supervisors", "severity", "serious", "oversee", "oversees"],
+      "keywords": ["supervisor", "supervisors", "severity", "serious", "oversee", "oversees", "how many", "scale"],
       "signaturePhrases": ["3 supervisors", "three supervisors", "high-severity"]
     },
     {
       "id": "brightpath.4",
       "detail": "On a busy day, the team receives roughly 15 to 20 incident reports.",
       "disclosure": "on-ask",
+      "cues": ["15", "20", "busy day", "per day"],
       "topicArea": "Incident volume",
-      "keywords": ["how many reports", "how many incidents", "volume", "per day", "a day", "busy"],
+      "keywords": ["how many reports", "how many incidents", "volume", "per day", "a day", "busy", "how many", "scale"],
       "signaturePhrases": ["15 to 20", "busy day"]
     },
     {
       "id": "brightpath.5",
       "detail": "Field workers often use low-end Android phones.",
       "disclosure": "on-ask",
+      "cues": ["android", "low-end", "cheap phone"],
       "topicArea": "Field workers' phones",
       "keywords": ["phone", "phones", "device", "devices", "android", "smartphone"],
       "signaturePhrases": ["low-end android", "android phones"]
@@ -53,6 +59,7 @@
       "id": "brightpath.6",
       "detail": "Field workers often have patchy connectivity in the field.",
       "disclosure": "on-ask",
+      "cues": ["signal", "connection", "connectivity", "offline", "patchy", "reception"],
       "topicArea": "Signal in the field",
       "keywords": ["signal", "connection", "connectivity", "internet", "offline", "network", "coverage", "reception"],
       "signaturePhrases": ["patchy", "connection comes and goes"]
@@ -61,6 +68,7 @@
       "id": "brightpath.7",
       "detail": "The system should accept incident submissions from the field and immediately notify the assigned case manager and supervisor.",
       "disclosure": "given",
+      "cues": ["notify", "notified"],
       "topicArea": "Who gets alerted",
       "keywords": ["notify", "notified", "alert", "alerted", "who needs to know", "who should know"],
       "signaturePhrases": ["notified immediately", "notify the assigned case manager"]
@@ -69,6 +77,7 @@
       "id": "brightpath.8",
       "detail": "Alerts need acknowledgement tracking with escalation when nobody responds.",
       "disclosure": "given",
+      "cues": ["acknowledge", "escalat"],
       "topicArea": "Acknowledgement and escalation",
       "keywords": ["acknowledge", "acknowledgement", "escalate", "escalation", "nobody responds", "no response"],
       "signaturePhrases": ["acknowledge", "escalated"]
@@ -77,6 +86,7 @@
       "id": "brightpath.9",
       "detail": "Every incident and response needs a durable record; old chat messages make donor and government reporting difficult.",
       "disclosure": "given",
+      "cues": ["record", "donor", "government"],
       "topicArea": "Records for reporting",
       "keywords": ["record", "records", "donor", "donors", "government", "audit", "history"],
       "signaturePhrases": ["donor", "government"]

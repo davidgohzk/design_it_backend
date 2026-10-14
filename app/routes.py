@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, Request
 from fastapi.responses import StreamingResponse
 
 from .assess_prompts import ASSESS_PROMPTS, assess_retry_prompt
+from .client import structured_chat
 from .llm import LLM, complete, get_llm, stream_completion
 from .prompts import DIAGRAM_SYSTEM_PROMPT, PERSONAS
 from .ratelimit import rate_limited
@@ -15,9 +16,12 @@ router = APIRouter(prefix="/api", dependencies=[Depends(rate_limited)])
 
 @router.post("/chat")
 async def chat(body: ChatRequest, request: Request, llm: LLM = Depends(get_llm)) -> StreamingResponse:
+    if body.structured:
+        history = [turn.model_dump(exclude_none=True) for turn in body.messages]
+        return await structured_chat(llm, request.app.state.upstream_slots, body.caseId, history)
     persona = PERSONAS[body.caseId]
     messages = [{"role": "system", "content": persona["prompt"]}]
-    messages += [turn.model_dump() for turn in body.messages]
+    messages += [turn.model_dump(include={"role", "content"}) for turn in body.messages]
     return await stream_completion(
         llm,
         request.app.state.upstream_slots,

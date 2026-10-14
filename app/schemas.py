@@ -19,11 +19,15 @@ class ChatTurn(StrictModel):
     # "system" is deliberately not accepted: the server owns the system prompt.
     role: Literal["user", "assistant"]
     content: str = Field(max_length=32_000)
+    # Structured mode: the fact ids the server returned for this client turn.
+    disclosedFactIds: list[str] | None = Field(default=None, max_length=50)
 
 
 class ChatRequest(StrictModel):
     caseId: CaseId
     messages: list[ChatTurn] = Field(min_length=1, max_length=100)
+    # False keeps the plain text stream; True returns {reply, disclosedFactIds, guard} (WP2).
+    structured: bool = False
 
     @model_validator(mode="after")
     def check_conversation(self) -> "ChatRequest":

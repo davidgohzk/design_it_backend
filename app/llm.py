@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 from collections.abc import AsyncIterator
 from dataclasses import dataclass
 
@@ -140,6 +141,59 @@ async def stream_completion(
             yield event
 
     return StreamingResponse(body(), media_type="text/event-stream", headers=SSE_HEADERS)
+
+
+def stream_reply(text: str, done_meta: dict) -> StreamingResponse:
+    """Stream an already-approved reply as SSE deltas (a few words each), then the `done` event."""
+
+    async def body() -> AsyncIterator[str]:
+        yield ": connected\n\n"
+        for part in re.findall(r"\S+\s*|\s+", text):
+            yield _sse({"delta": part})
+        yield _sse(done_meta, "done")
+
+    return StreamingResponse(body(), media_type="text/event-stream", headers=SSE_HEADERS)
+
+
+# Models that rejected response_format json_schema; they get json_object from then on.
+_NO_JSON_SCHEMA: set[str] = set()
+
+
+def parse_json_object(content: str) -> dict:
+    """The JSON object in a completion, allowing a ```json fence around it."""
+    text = content.strip()
+    fenced = re.fullmatch(r"```(?:json)?\s*(.*?)\s*```", text, flags=re.DOTALL)
+    value = json.loads(fenced.group(1) if fenced else text)
+    if not isinstance(value, dict):
+        raise ValueError("The completion is not a JSON object.")
+    return value
+
+
+async def complete_json(
+    llm: LLM, slots: UpstreamSlots, messages: list[dict], *, name: str, schema: dict, **params
+) -> dict:
+    """A JSON-object completion: strict JSON schema mode where the provider supports it, otherwise
+    JSON mode. A reply that doesn't parse is asked for once more."""
+    if llm.model in _NO_JSON_SCHEMA:
+        response_format = {"type": "json_object"}
+    else:
+        response_format = {"type": "json_schema", "json_schema": {"name": name, "strict": True, "schema": schema}}
+    last_error = "The AI's reply was not valid JSON."
+    for _attempt in range(2):
+        try:
+            content = await complete(llm, slots, messages, response_format=response_format, **params)
+        except ApiError as error:
+            if error.code != "upstream_bad_request" or response_format["type"] != "json_schema":
+                raise
+            logger.info("Model %s rejected json_schema; falling back to json_object.", llm.model)
+            _NO_JSON_SCHEMA.add(llm.model)
+            response_format = {"type": "json_object"}
+            content = await complete(llm, slots, messages, response_format=response_format, **params)
+        try:
+            return parse_json_object(content)
+        except ValueError as error:
+            last_error = str(error)
+    raise ApiError(502, "invalid_json", f"{last_error} Please retry.")
 
 
 async def complete(llm: LLM, slots: UpstreamSlots, messages: list[dict], **params) -> str:

@@ -1,3 +1,4 @@
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from types import SimpleNamespace
 from typing import Any
@@ -28,6 +29,8 @@ class FakeStream:
 class FakeState:
     chunks: list[str] = field(default_factory=lambda: ["Hello", " there"])
     content: str | None = '{"coverage": []}'
+    # When set, answers each non-streaming call instead of `content`; may return an exception to raise.
+    responder: Callable[[dict[str, Any]], str | Exception] | None = None
     error_before: Exception | None = None
     error_mid: Exception | None = None
     calls: list[dict[str, Any]] = field(default_factory=list)
@@ -47,7 +50,12 @@ class FakeCompletions:
             stream = FakeStream(state.chunks, state.error_mid)
             state.streams.append(stream)
             return stream
-        return SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content=state.content))])
+        content = state.content
+        if state.responder:
+            content = state.responder(kwargs)
+            if isinstance(content, Exception):
+                raise content
+        return SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content=content))])
 
 
 class FakeClient:
