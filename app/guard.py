@@ -9,13 +9,16 @@ from dataclasses import dataclass, field
 
 
 def normalise(text: str) -> str:
-    """Lowercase, with curly quotes made straight, so phrases match however they were typed."""
-    return text.lower().replace("’", "'").replace("‘", "'").replace("“", '"').replace("”", '"')
+    """Lowercase, curly quotes made straight, and hyphens and dashes read as spaces ("walk-in" = "walk in").
+    Matches normalise() in design_it_frontend/src/assessment/matching.ts."""
+    text = text.lower().replace("’", "'").replace("‘", "'").replace("“", '"').replace("”", '"')
+    text = re.sub(r"[-–—―]", " ", text)
+    return re.sub(r"[ \t]+", " ", text)
 
 
 def contains_term(text: str, term: str) -> bool:
-    """True when `term` appears in `text` as whole words (case-insensitive)."""
-    pattern = r"(?<![a-z0-9])" + re.escape(normalise(term).strip()) + r"(?![a-z0-9])"
+    """True when `term` appears in `text` as whole words (case-insensitive); a plural ("smartphones") counts."""
+    pattern = r"(?<![a-z0-9])" + re.escape(normalise(term).strip()) + r"(?:s|es)?(?![a-z0-9])"
     return re.search(pattern, normalise(text)) is not None
 
 

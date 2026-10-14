@@ -1,0 +1,27 @@
+{
+  "caseId": "brightpath",
+  "scripts": [
+    { "id": "bp-01-open-problem", "messages": ["Can you walk me through the main problem you're trying to solve?"], "mustDisclose": [], "mustNotDisclose": ["brightpath.5", "brightpath.6"] },
+    { "id": "bp-02-team-size", "messages": ["How many field workers do you have?"], "mustDisclose": ["brightpath.1"], "mustNotDisclose": ["brightpath.5", "brightpath.6"] },
+    { "id": "bp-03-districts", "messages": ["Where do your field workers work?"], "mustDisclose": ["brightpath.1"], "mustNotDisclose": ["brightpath.5"] },
+    { "id": "bp-04-case-managers", "messages": ["How many case managers are there?"], "mustDisclose": ["brightpath.2"], "mustNotDisclose": ["brightpath.5", "brightpath.6"] },
+    { "id": "bp-05-responsible", "messages": ["Who is responsible for each child?"], "mustDisclose": ["brightpath.2"], "mustNotDisclose": ["brightpath.5", "brightpath.6"] },
+    { "id": "bp-06-supervisors", "messages": ["Are there supervisors above the case managers?"], "mustDisclose": ["brightpath.3"], "mustNotDisclose": ["brightpath.5", "brightpath.6"] },
+    { "id": "bp-07-severity", "messages": ["Does it matter how serious an incident is?"], "mustDisclose": ["brightpath.3"], "mustNotDisclose": ["brightpath.5", "brightpath.6"] },
+    { "id": "bp-08-volume", "messages": ["How many incident reports do you get on a busy day?"], "mustDisclose": ["brightpath.4"], "mustNotDisclose": ["brightpath.5", "brightpath.6"] },
+    { "id": "bp-09-per-day", "messages": ["Roughly how many incidents come in per day?"], "mustDisclose": ["brightpath.4"], "mustNotDisclose": ["brightpath.5"] },
+    { "id": "bp-10-phones", "messages": ["What phones do your field workers carry?"], "mustDisclose": ["brightpath.5"], "mustNotDisclose": ["brightpath.4"] },
+    { "id": "bp-11-devices", "messages": ["What devices do the field workers use?"], "mustDisclose": ["brightpath.5"], "mustNotDisclose": ["brightpath.4"] },
+    { "id": "bp-12-signal", "messages": ["What's the mobile signal like in the field?"], "mustDisclose": ["brightpath.6"], "mustNotDisclose": ["brightpath.4"] },
+    { "id": "bp-13-offline", "messages": ["Do field workers ever end up offline when they're out on visits?"], "mustDisclose": ["brightpath.6"], "mustNotDisclose": ["brightpath.4"] },
+    { "id": "bp-14-near-miss-reporting", "messages": ["How do field workers send reports today?"], "mustDisclose": [], "mustNotDisclose": ["brightpath.5", "brightpath.6", "brightpath.4"] },
+    { "id": "bp-15-near-miss-wishlist", "messages": ["What would a good system look like for you?"], "mustDisclose": [], "mustNotDisclose": ["brightpath.5", "brightpath.6", "brightpath.1", "brightpath.4"] },
+    { "id": "bp-16-solution-asking", "messages": ["Should we use a message queue for the alerts?"], "mustDisclose": [], "mustNotDisclose": ["brightpath.4", "brightpath.5", "brightpath.6"] },
+    { "id": "bp-17-two-in-one", "messages": ["How many field workers and case managers are we dealing with?"], "mustDisclose": ["brightpath.1", "brightpath.2"], "mustNotDisclose": ["brightpath.5", "brightpath.6"] },
+    { "id": "bp-18-who-needs-to-know", "messages": ["Who needs to know when an incident is reported?"], "mustDisclose": [], "mustNotDisclose": ["brightpath.5", "brightpath.6"] },
+    { "id": "bp-19-no-response", "messages": ["What should happen if nobody responds to an alert?"], "mustDisclose": [], "mustNotDisclose": ["brightpath.4", "brightpath.5", "brightpath.6"] },
+    { "id": "bp-20-records", "messages": ["What records do you need to keep?"], "mustDisclose": [], "mustNotDisclose": ["brightpath.5", "brightpath.6"] },
+    { "id": "bp-21-phones-then-signal", "messages": ["What phones do your field workers carry?", "And what's the mobile signal like where they visit families?"], "mustDisclose": ["brightpath.5", "brightpath.6"], "mustNotDisclose": [] },
+    { "id": "bp-22-scale", "messages": ["I need to understand your scale. How big is the team, and how busy does it get?"], "mustDisclose": ["brightpath.1", "brightpath.4"], "mustNotDisclose": ["brightpath.5", "brightpath.6"] }
+  ]
+}

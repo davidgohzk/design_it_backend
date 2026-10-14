@@ -16,8 +16,8 @@
       "disclosure": "on-ask",
       "cues": ["40", "forty", "district"],
       "topicArea": "Field team size",
-      "keywords": ["field workers", "how many", "team", "districts", "scale"],
-      "signaturePhrases": ["40 field workers", "three districts"]
+      "keywords": ["field workers", "how many", "team", "districts", "scale", "how big"],
+      "signaturePhrases": ["40 field workers", "three districts", "districts", "forty field workers"]
     },
     {
       "id": "brightpath.2",
@@ -25,8 +25,8 @@
       "disclosure": "on-ask",
       "cues": ["12", "twelve", "responsible for", "assigned"],
       "topicArea": "Who owns each child's case",
-      "keywords": ["case manager", "case managers", "responsible", "assigned", "who handles", "owns"],
-      "signaturePhrases": ["12 case managers", "twelve case managers"]
+      "keywords": ["case manager", "case managers", "responsible", "assigned", "who handles", "owns", "team", "how big"],
+      "signaturePhrases": ["12 case managers", "twelve case managers", "case managers"]
     },
     {
       "id": "brightpath.3",
@@ -34,8 +34,8 @@
       "disclosure": "on-ask",
       "cues": ["supervisor", "high-severity", "high severity"],
       "topicArea": "Supervisors and severity",
-      "keywords": ["supervisor", "supervisors", "severity", "serious", "oversee", "oversees", "how many", "scale"],
-      "signaturePhrases": ["3 supervisors", "three supervisors", "high-severity"]
+      "keywords": ["supervisor", "supervisors", "severity", "serious", "oversee", "oversees", "how many", "scale", "team", "how big"],
+      "signaturePhrases": ["3 supervisors", "three supervisors", "high-severity", "supervisors"]
     },
     {
       "id": "brightpath.4",
@@ -43,7 +43,7 @@
       "disclosure": "on-ask",
       "cues": ["15", "20", "busy day", "per day"],
       "topicArea": "Incident volume",
-      "keywords": ["how many reports", "how many incidents", "volume", "per day", "a day", "busy", "how many", "scale"],
+      "keywords": ["how many reports", "how many incidents", "volume", "per day", "a day", "busy", "how many", "scale", "how busy"],
       "signaturePhrases": ["15 to 20", "busy day"]
     },
     {
@@ -53,7 +53,7 @@
       "cues": ["android", "low-end", "cheap phone"],
       "topicArea": "Field workers' phones",
       "keywords": ["phone", "phones", "device", "devices", "android", "smartphone"],
-      "signaturePhrases": ["low-end android", "android phones"]
+      "signaturePhrases": ["low-end android", "android phones", "android"]
     },
     {
       "id": "brightpath.6",
@@ -62,7 +62,7 @@
       "cues": ["signal", "connection", "connectivity", "offline", "patchy", "reception"],
       "topicArea": "Signal in the field",
       "keywords": ["signal", "connection", "connectivity", "internet", "offline", "network", "coverage", "reception"],
-      "signaturePhrases": ["patchy", "connection comes and goes"]
+      "signaturePhrases": ["patchy", "connection comes and goes", "signal", "connectivity"]
     },
     {
       "id": "brightpath.7",

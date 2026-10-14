@@ -26,7 +26,7 @@
       "cues": ["elderly", "smartphone", "phone", "walk in", "seniors"],
       "topicArea": "Who books",
       "keywords": ["who books", "who makes", "residents", "groups", "elderly", "seniors", "smartphone", "walk in", "makes the bookings"],
-      "signaturePhrases": ["smartphones", "walk in", "seniors' exercise"]
+      "signaturePhrases": ["smartphones", "walk in", "seniors' exercise", "elderly"]
     },
     {
       "id": "cr.root-cause",
@@ -46,7 +46,7 @@
       "cues": ["staff", "shift", "volunteer", "computer", "desk"],
       "topicArea": "Who runs the desk",
       "keywords": ["staff", "who works", "desk", "shift", "volunteer", "computer"],
-      "signaturePhrases": ["alternating shifts", "one computer"]
+      "signaturePhrases": ["alternating shifts", "one computer", "volunteer", "shift"]
     }
   ]
 }

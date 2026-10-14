@@ -23,6 +23,10 @@ def test_contains_term_matches_whole_words_only():
     assert not contains_term("How many bedrooms?", "rooms")
     assert contains_term("Who usually makes the bookings?", "makes the bookings")
     assert contains_term("Why?", "why")
+    # Plurals and hyphens: "smartphones" asks about smartphone; "walk-in" is "walk in".
+    assert contains_term("Do they have smartphones?", "smartphone")
+    assert contains_term("Do people walk-in?", "walk in")
+    assert not contains_term("A smartphoneless group", "smartphone")
 
 
 @pytest.mark.parametrize(
