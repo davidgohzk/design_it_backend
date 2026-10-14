@@ -16,7 +16,7 @@
       "disclosure": "on-ask",
       "cues": ["40", "forty", "district"],
       "topicArea": "Field team size",
-      "keywords": ["field workers", "how many", "team", "districts", "scale", "how big"],
+      "keywords": ["field workers", "how many", "districts", "scale", "how big"],
       "signaturePhrases": ["40 field workers", "three districts", "districts", "forty field workers"]
     },
     {
@@ -25,7 +25,7 @@
       "disclosure": "on-ask",
       "cues": ["12", "twelve", "responsible for", "assigned"],
       "topicArea": "Who owns each child's case",
-      "keywords": ["case manager", "case managers", "responsible", "assigned", "who handles", "owns", "team", "how big"],
+      "keywords": ["case manager", "case managers", "responsible", "assigned", "who handles", "owns", "how big"],
       "signaturePhrases": ["12 case managers", "twelve case managers", "case managers"]
     },
     {
@@ -34,7 +34,7 @@
       "disclosure": "on-ask",
       "cues": ["supervisor", "high-severity", "high severity"],
       "topicArea": "Supervisors and severity",
-      "keywords": ["supervisor", "supervisors", "severity", "serious", "oversee", "oversees", "how many", "scale", "team", "how big"],
+      "keywords": ["supervisor", "supervisors", "severity", "serious", "oversee", "oversees", "how many", "scale", "how big"],
       "signaturePhrases": ["3 supervisors", "three supervisors", "high-severity", "supervisors"]
     },
     {
