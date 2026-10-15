@@ -108,7 +108,7 @@ DIAGRAM_SYSTEM_PROMPT = """You edit the final system diagram of a design doc as 
 
 Rules:
 - Respond with Mermaid source code ONLY. No prose, no explanation, no code fences.
-- Start the diagram with "flowchart LR", or keep the direction the existing diagram uses.
+- Start the diagram with "flowchart TD", or keep the direction the existing diagram uses.
 - Keep node IDs stable when editing. Never rename an existing ID.
 - When the message lists the nodes in the decision sketches, use exactly those IDs, labels and types for the same components.
 - Never add a node or connection the engineer did not ask for.
