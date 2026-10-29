@@ -7,8 +7,8 @@ from .prompts import PERSONAS
 
 MAX_CHAT_CHARS = 120_000
 
-# Cases with a persona on the server: "brightpath" is /demo's case, "community-room" is /simple's.
-CaseId = Literal["brightpath", "community-room"]
+# Community Room is the only persona served by the API and powers /demo.
+CaseId = Literal["community-room"]
 
 
 class StrictModel(BaseModel):
@@ -52,7 +52,7 @@ class DiagramRequest(StrictModel):
     priorAttempt: PriorAttempt | None = None
 
 
-AssessTask = Literal["match", "assertion", "justify", "fit", "suggest"]
+AssessTask = Literal["match", "assertion", "justify", "fit", "suggest", "bano"]
 
 
 class AssessFact(StrictModel):
@@ -83,3 +83,5 @@ class AssessRequest(StrictModel):
 class AssessResponse(BaseModel):
     content: str
     model: str
+    # The prompt's version, for the tasks that have one; None for the rest.
+    promptVersion: str | None = None

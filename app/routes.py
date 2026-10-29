@@ -4,7 +4,7 @@ import json
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import StreamingResponse
 
-from .assess_prompts import ASSESS_PROMPTS, assess_retry_prompt
+from .assess_prompts import ASSESS_PROMPT_VERSIONS, ASSESS_PROMPTS, assess_retry_prompt
 from .client import structured_chat
 from .llm import LLM, complete, get_llm, stream_completion
 from .prompts import DIAGRAM_SYSTEM_PROMPT, PERSONAS
@@ -78,4 +78,4 @@ async def assess(body: AssessRequest, request: Request, llm: LLM = Depends(get_l
     ]
     # The judge runs at temperature 0, so repeated runs differ only where the model is unsure.
     content = await complete(llm, request.app.state.upstream_slots, messages, temperature=0, max_tokens=8000)
-    return AssessResponse(content=content, model=model)
+    return AssessResponse(content=content, model=model, promptVersion=ASSESS_PROMPT_VERSIONS.get(body.task))

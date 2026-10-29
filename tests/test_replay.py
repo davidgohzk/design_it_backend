@@ -26,7 +26,7 @@ def test_scripts_name_real_facts(case_id):
 
 @pytest.mark.parametrize("case_id", sorted(CASE_FACTS))
 def test_scripts_match_the_frontend_copy(case_id):
-    frontend = FRONTEND_CASES_DIR / f"{case_id}.replay.json"
+    frontend = FRONTEND_CASES_DIR / case_id / "replay.json"
     if not frontend.exists():
         pytest.skip("design_it_frontend is not checked out next to this repo")
     backend = SCRIPTS_DIR / f"{case_id}.replay.json"
@@ -35,7 +35,7 @@ def test_scripts_match_the_frontend_copy(case_id):
 
 def test_openings_match_the_frontend_cases():
     for case_id, opening in OPENING.items():
-        source = (FRONTEND_CASES_DIR / f"{case_id}.ts")
+        source = FRONTEND_CASES_DIR / case_id / "index.ts"
         if not source.exists():
             pytest.skip("design_it_frontend is not checked out next to this repo")
         assert opening in source.read_text(encoding="utf-8")

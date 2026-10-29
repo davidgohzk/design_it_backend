@@ -21,7 +21,6 @@ SCRIPTS_DIR = Path(__file__).parent
 OPENING = {
     # The client's first message in each case (src/cases/<case>.ts openingMessage).
     "community-room": "Hi, I'm Mei — I run the front desk here at Bukit Cahaya Community Centre. Our room bookings have become a bit of a headache. Ask me anything!",
-    "brightpath": "Hi! I'm Sarah, program director at BrightPath NGO. We work with at-risk children and I'm hoping you can help us design a better system for our field teams. Feel free to ask me about the problem we're facing.",
 }
 TARGETS = {"falsePositiveRate": 0.05, "falseNegativeRate": 0.10}
 # SoCLaaS rate-limits bursts, so a failed script run waits and is retried from the start.

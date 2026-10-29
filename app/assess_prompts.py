@@ -1,7 +1,8 @@
 """Prompts for /api/assess: the narrow judge tasks of the review behind /demo and /simple.
 
-match and assertion are Ask's two borderline questions (WP7), justify is the Justify level (WP9)
-and fit checks the walkthrough's one-liners (WP10).
+match and assertion are Ask's two borderline questions (WP7), justify is the Justify level (WP9),
+fit checks the walkthrough's one-liners (WP10), and bano judges the items of the interview-mistake
+checklist that no rule can decide.
 
 The browser verifies every quote the model returns by string match and discards any that
 don't match, so these prompts ask for short verbatim quotes and nothing else as evidence.
@@ -119,12 +120,36 @@ Rules:
 - At most 40 words each. Plain language, no jargon."""
 )
 
+BANO_PROMPT = (
+    """You review a transcript of an engineer interviewing a client, and say which of a listed set of interviewing mistakes the engineer made.
+
+"""
+    + _EVIDENCE_RULES
+    + """
+
+The transcript is numbered. Each message says whether the engineer or the client wrote it. Judge only the engineer's messages; the client's are context.
+Each item gives an id, the mistake in one line, a definition, an example of the mistake for this case and an example of a good question for this case.
+Return one JSON object only, with this exact shape:
+{
+  "items": [{"id": "QF1", "observed": true, "evidence": [{"messageIndex": 3, "quote": "exact words from that engineer message"}], "reason": "at most 25 words"}]
+}
+
+Rules:
+- Return exactly one entry per item in the evidence, in the same order, using its id.
+- observed is true only when the mistake is really there in this transcript. When you are unsure, return false: an unreported mistake costs less than one the engineer didn't make.
+- When observed is true, give at least one piece of evidence: the number of an engineer message and words copied from it exactly. An entry with no exact quote is discarded, so quote exactly or return observed false.
+- When observed is false, return an empty evidence list.
+- Judge each item on its own. The examples show what the item means for this case; they are not the only form the mistake can take.
+- Never return a count, a score, a total or a rating. This is teaching feedback, not a mark."""
+)
+
 ASSESS_PROMPTS = {
     "match": MATCH_PROMPT,
     "assertion": ASSERTION_PROMPT,
     "justify": JUSTIFY_PROMPT,
     "fit": FIT_PROMPT,
     "suggest": SUGGEST_PROMPT,
+    "bano": BANO_PROMPT,
 }
 
 ASSESS_SECTIONS = {
@@ -133,7 +158,15 @@ ASSESS_SECTIONS = {
     "justify": ("items",),
     "fit": ("scenarios",),
     "suggest": ("suggestions",),
+    "bano": ("items",),
 }
+
+# The version of a judge prompt, reported on the response and stored on the result, so a stored
+# review says which prompt produced it. Only the tasks in here are versioned; the others came before
+# versioning existed and are left alone.
+BANO_PROMPT_VERSION = "bano-1"
+
+ASSESS_PROMPT_VERSIONS = {"bano": BANO_PROMPT_VERSION}
 
 
 def assess_retry_prompt(sections: list[str]) -> str:

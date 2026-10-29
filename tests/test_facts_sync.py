@@ -1,5 +1,5 @@
 """Each case's facts come from app/cases/<case>.facts.json. The frontend keeps an identical copy
-in design_it_frontend/src/cases/ and checks its case definitions against it."""
+in design_it_frontend/src/cases/<case>/ and checks its case definitions against it."""
 
 import json
 from pathlib import Path
@@ -10,7 +10,7 @@ from app.prompts import CASE_FACTS, CASES_DIR, PERSONAS
 
 FRONTEND_CASES_DIR = Path(__file__).resolve().parents[2] / "design_it_frontend" / "src" / "cases"
 
-CASE_IDS = ["brightpath", "community-room"]
+CASE_IDS = ["community-room"]
 
 
 @pytest.mark.parametrize("case_id", CASE_IDS)
@@ -39,7 +39,7 @@ def test_on_probe_facts_have_a_parent_and_probe_cues(case_id):
 
 @pytest.mark.parametrize("case_id", CASE_IDS)
 def test_facts_file_matches_the_frontend_copy(case_id):
-    frontend = FRONTEND_CASES_DIR / f"{case_id}.facts.json"
+    frontend = FRONTEND_CASES_DIR / case_id / "facts.json"
     if not frontend.exists():
         pytest.skip("design_it_frontend is not checked out next to this repo")
     backend = CASES_DIR / f"{case_id}.facts.json"

@@ -2,13 +2,7 @@ import pytest
 
 from app.guard import allowed_facts, check_reply, contains_term, disclosed_before
 from app.prompts import CASE_FACTS
-from tests.transcripts import (
-    BRIGHTPATH_DISCLOSURES,
-    BRIGHTPATH_GOLDEN,
-    COMMUNITY_ROOM_DISCLOSURES,
-    COMMUNITY_ROOM_GOLDEN,
-    as_history,
-)
+from tests.transcripts import COMMUNITY_ROOM_DISCLOSURES, COMMUNITY_ROOM_GOLDEN, as_history
 
 CR = CASE_FACTS["community-room"]
 OPENING = {"role": "assistant", "content": COMMUNITY_ROOM_GOLDEN[0][1]}
@@ -33,7 +27,6 @@ def test_contains_term_matches_whole_words_only():
     "case_id, transcript, expected",
     [
         ("community-room", COMMUNITY_ROOM_GOLDEN, COMMUNITY_ROOM_DISCLOSURES),
-        ("brightpath", BRIGHTPATH_GOLDEN, BRIGHTPATH_DISCLOSURES),
     ],
 )
 def test_golden_transcript_gives_the_expected_disclosures(case_id, transcript, expected):
