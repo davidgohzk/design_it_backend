@@ -1,8 +1,8 @@
 """Prompts for /api/assess: the narrow judge tasks of the review behind /demo and /simple.
 
 match and assertion are Ask's two borderline questions (WP7), justify is the Justify level (WP9),
-fit checks the walkthrough's one-liners (WP10), and bano judges the items of the interview-mistake
-checklist that no rule can decide.
+fit checks the walkthrough's one-liners (WP10), bano judges the items of the interview-mistake
+checklist that no rule can decide, and iso critiques the whole design against ISO/IEC 25010:2023.
 
 The browser verifies every quote the model returns by string match and discards any that
 don't match, so these prompts ask for short verbatim quotes and nothing else as evidence.
@@ -143,6 +143,72 @@ Rules:
 - Never return a count, a score, a total or a rating. This is teaching feedback, not a mark."""
 )
 
+TURNS_PROMPT = (
+    """You are an expert evaluator of a requirements-elicitation interview. Classify each interviewer action using its full preceding conversation.
+
+"""
+    + _EVIDENCE_RULES
+    + """
+
+initialRequirements is the brief and transcript is the whole conversation, each message with its messageIndex and role ("user" is the interviewer, "assistant" is the client). For each turn, latestUtterance is the interviewer action at that messageIndex, its preceding conversation is the transcript up to that messageIndex, and remainingRequirements lists implicit requirements the client had not yet disclosed.
+Action definitions: clarify asks for clarification of information mentioned earlier; probe explores new or more detailed requirements; finish concludes the conversation.
+Determine whether each question targets any still-hidden listed requirements. Clarification questions can target them too. Use only requirement IDs in that turn's remainingRequirements.
+Return one JSON object only:
+{"turns": [{"messageIndex": 1, "action_type": "clarify | probe | finish", "is_relevant_to_implicit_requirements": true, "relevant_implicit_requirement_ids": ["fact.id"], "reasoning": "brief explanation"}]}
+Return one entry per turn in order. Give every targeted ID, or an empty list. Set relevance true exactly when the list is nonempty. Never claim that the question succeeded; the client reply determines that separately.
+"""
+)
+
+SCENARIO_ADEQUACY_PROMPT = (
+    """You evaluate each scenario against the engineer's selected decision, diagram components, and written explanation.
+
+""" + _EVIDENCE_RULES + """
+
+Return one JSON object: {"scenarios": [{"scenarioId": "id", "decision": "sound | weak | unsound", "diagram": "sound | weak | unsound", "justification": "sound | weak | unsound", "reasons": {"decision": "short reason", "diagram": "short reason", "justification": "short reason"}, "quotes": [{"source": "answer | doc", "text": "exact words"}]}]}.
+Judge only the selected path. A sound decision addresses the situation; sound diagram linkage uses selected final boxes that actually express the selected decision; a sound justification explains how that path handles the outcome. A weak result is partial, an unsound result is unsupported. Quote the supplied answer or design document exactly; without a supporting quote, return an empty quotes list.
+"""
+)
+
+RATIONALE_PROMPT = (
+    """You judge whether each supplied link in a design-document reasoning chain makes sense.
+
+""" + _EVIDENCE_RULES + """
+
+Return one JSON object: {"links": [{"id": "link id", "verdict": "sound | weak | unsound", "reason": "short reason", "quote": "exact words from source or target"}]}.
+Each link supplies its source and target text. A citation should support a requirement, a requirement should support a decision, a decision should explain its sketch, and a sketch should fit the final diagram. Return one entry per link. Quote exactly; use null when no quote supports a judgment.
+"""
+)
+
+ISO_PROMPT = (
+    """You are a senior reviewer critiquing a design against the product quality characteristics of ISO/IEC 25010:2023.
+
+""" + _EVIDENCE_RULES + """
+
+The evidence gives the characteristics to judge (each with its id and what it covers), the engineer's design document, the final diagram and the measured findings of the earlier checks.
+Return one JSON object only, with this exact shape:
+{
+  "characteristics": [{
+    "id": "reliability",
+    "verdict": "strong | adequate | weak | not_addressed",
+    "summary": "one line on how the design treats this characteristic",
+    "strengths": [{"point": "one concise point", "refs": ["D3"], "quote": "exact words from the submitted work or null"}],
+    "weaknesses": [{"point": "...", "refs": [], "quote": null}],
+    "improvements": [{"point": "...", "refs": [], "quote": null}]
+  }]
+}
+
+Rules:
+- Return exactly one entry for every characteristic in the evidence, in the same order, using its id.
+- verdict: strong = the design addresses it and the choices hold up; adequate = addressed but thin; weak = addressed and the choices do not hold up; not_addressed = the design says nothing about it. Prefer not_addressed over inventing a judgment.
+- summary is one sentence. A not_addressed characteristic needs a summary and no points.
+- At most two points in each of strengths, weaknesses and improvements. An empty list is fine.
+- improvements say what to change, concretely: the requirement to write, the decision to make, the box to add.
+- refs lists only ids given in the evidence (R#, A#, D#, diagram box ids). Leave it empty rather than naming an id that is not there.
+- quote must be copied verbatim from the design document, the final diagram or the engineer's own words. Return null when you cannot quote it exactly.
+- Judge only the design in front of you. Do not invent functionality, facts or requirements.
+"""
+)
+
 ASSESS_PROMPTS = {
     "match": MATCH_PROMPT,
     "assertion": ASSERTION_PROMPT,
@@ -150,6 +216,10 @@ ASSESS_PROMPTS = {
     "fit": FIT_PROMPT,
     "suggest": SUGGEST_PROMPT,
     "bano": BANO_PROMPT,
+    "turns": TURNS_PROMPT,
+    "scenario_adequacy": SCENARIO_ADEQUACY_PROMPT,
+    "iso": ISO_PROMPT,
+    "rationale": RATIONALE_PROMPT,
 }
 
 ASSESS_SECTIONS = {
@@ -159,6 +229,10 @@ ASSESS_SECTIONS = {
     "fit": ("scenarios",),
     "suggest": ("suggestions",),
     "bano": ("items",),
+    "turns": ("turns",),
+    "scenario_adequacy": ("scenarios",),
+    "iso": ("characteristics",),
+    "rationale": ("links",),
 }
 
 # The version of a judge prompt, reported on the response and stored on the result, so a stored
@@ -166,7 +240,7 @@ ASSESS_SECTIONS = {
 # versioning existed and are left alone.
 BANO_PROMPT_VERSION = "bano-1"
 
-ASSESS_PROMPT_VERSIONS = {"bano": BANO_PROMPT_VERSION}
+ASSESS_PROMPT_VERSIONS = {"bano": BANO_PROMPT_VERSION, "turns": "turns-1", "scenario_adequacy": "scenario-adequacy-1", "iso": "iso-25010-1", "rationale": "rationale-1"}
 
 
 def assess_retry_prompt(sections: list[str]) -> str:
