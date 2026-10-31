@@ -1,0 +1,55 @@
+{
+  "_comment": "The /api/assess contract. The backend owns this file; design_it_frontend keeps an identical copy at src/review/judge/tasks.json, and a test on each side compares them. Order is the order a review issues the tasks.",
+  "tasks": [
+    {
+      "task": "match",
+      "section": "matches",
+      "promptVersion": null
+    },
+    {
+      "task": "assertion",
+      "section": "facts",
+      "promptVersion": null
+    },
+    {
+      "task": "justify",
+      "section": "items",
+      "promptVersion": null
+    },
+    {
+      "task": "fit",
+      "section": "scenarios",
+      "promptVersion": null
+    },
+    {
+      "task": "suggest",
+      "section": "suggestions",
+      "promptVersion": null
+    },
+    {
+      "task": "bano",
+      "section": "items",
+      "promptVersion": "bano-1"
+    },
+    {
+      "task": "turns",
+      "section": "turns",
+      "promptVersion": "turns-1"
+    },
+    {
+      "task": "scenario_adequacy",
+      "section": "scenarios",
+      "promptVersion": "scenario-adequacy-1"
+    },
+    {
+      "task": "iso",
+      "section": "characteristics",
+      "promptVersion": "iso-25010-1"
+    },
+    {
+      "task": "rationale",
+      "section": "links",
+      "promptVersion": "rationale-1"
+    }
+  ]
+}

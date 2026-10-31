@@ -1,0 +1,30 @@
+{
+  "caseId": "community-room",
+  "scripts": [
+    { "id": "cr-01-open-problem", "messages": ["Hi Mei, what's the problem you're having?"], "mustDisclose": [], "mustNotDisclose": ["cr.root-cause", "cr.scale", "cr.staff"] },
+    { "id": "cr-02-today", "messages": ["What happens today when someone wants to book a room?"], "mustDisclose": [], "mustNotDisclose": ["cr.root-cause", "cr.staff"] },
+    { "id": "cr-03-rooms", "messages": ["How many rooms do you have?"], "mustDisclose": ["cr.scale"], "mustNotDisclose": ["cr.root-cause", "cr.staff", "cr.bookers"] },
+    { "id": "cr-04-volume", "messages": ["How many bookings do you get in a week?"], "mustDisclose": ["cr.scale"], "mustNotDisclose": ["cr.root-cause", "cr.staff"] },
+    { "id": "cr-05-busy", "messages": ["When does it get busy?"], "mustDisclose": ["cr.scale"], "mustNotDisclose": ["cr.root-cause"] },
+    { "id": "cr-06-who-books", "messages": ["Who usually makes the bookings?"], "mustDisclose": ["cr.bookers"], "mustNotDisclose": ["cr.root-cause", "cr.staff"] },
+    { "id": "cr-07-elderly", "messages": ["Are many of the people who book elderly?"], "mustDisclose": ["cr.bookers"], "mustNotDisclose": ["cr.root-cause"] },
+    { "id": "cr-08-smartphones", "messages": ["Do the people who book have smartphones?"], "mustDisclose": ["cr.bookers"], "mustNotDisclose": ["cr.root-cause"] },
+    { "id": "cr-09-staff", "messages": ["Who works at the desk?"], "mustDisclose": ["cr.staff"], "mustNotDisclose": ["cr.root-cause", "cr.scale"] },
+    { "id": "cr-10-computer", "messages": ["What computer or equipment do you have at the desk?"], "mustDisclose": ["cr.staff"], "mustNotDisclose": ["cr.root-cause"] },
+    { "id": "cr-11-volunteers", "messages": ["Do volunteers help out at the desk?"], "mustDisclose": ["cr.staff"], "mustNotDisclose": ["cr.root-cause"] },
+    { "id": "cr-12-probe-why", "messages": ["Why do you think the double bookings happen?"], "mustDisclose": ["cr.root-cause"], "mustNotDisclose": ["cr.staff"] },
+    { "id": "cr-13-probe-recorded", "messages": ["How are phone bookings recorded?"], "mustDisclose": ["cr.root-cause"], "mustNotDisclose": [] },
+    { "id": "cr-14-probe-into-book", "messages": ["How do phone bookings get into the book?"], "mustDisclose": ["cr.root-cause"], "mustNotDisclose": [] },
+    { "id": "cr-15-probe-after-context", "messages": ["What happens today when someone books a room?", "And why do the double bookings happen, do you think?"], "mustDisclose": ["cr.root-cause"], "mustNotDisclose": ["cr.staff"] },
+    { "id": "cr-16-near-miss-tell-more", "messages": ["Tell me more about the double bookings."], "mustDisclose": [], "mustNotDisclose": ["cr.root-cause"] },
+    { "id": "cr-17-near-miss-how-often", "messages": ["How often do double bookings happen?"], "mustDisclose": [], "mustNotDisclose": ["cr.root-cause"] },
+    { "id": "cr-18-near-miss-other-problems", "messages": ["Do you have any other problems?"], "mustDisclose": [], "mustNotDisclose": ["cr.root-cause"] },
+    { "id": "cr-19-near-miss-wishlist", "messages": ["What would you like a new system to do?"], "mustDisclose": [], "mustNotDisclose": ["cr.root-cause", "cr.scale", "cr.staff", "cr.bookers"] },
+    { "id": "cr-20-solution-asking", "messages": ["Should we build you a booking app?"], "mustDisclose": [], "mustNotDisclose": ["cr.root-cause", "cr.scale"] },
+    { "id": "cr-21-near-miss-phone", "messages": ["Do people book by phone?"], "mustDisclose": [], "mustNotDisclose": ["cr.root-cause"] },
+    { "id": "cr-22-near-miss-who-answers", "messages": ["Who answers the phone when people call to book?"], "mustDisclose": [], "mustNotDisclose": ["cr.root-cause"] },
+    { "id": "cr-23-two-in-one", "messages": ["How many rooms do you have, and who usually makes the bookings?"], "mustDisclose": ["cr.scale", "cr.bookers"], "mustNotDisclose": ["cr.root-cause"] },
+    { "id": "cr-24-full-interview", "messages": ["What happens today when someone books a room?", "Who works at the desk?", "Why do the double bookings happen?"], "mustDisclose": ["cr.staff", "cr.root-cause"], "mustNotDisclose": [] },
+    { "id": "cr-25-jargon", "messages": ["What's your current booking database and backend like?"], "mustDisclose": [], "mustNotDisclose": ["cr.root-cause", "cr.staff"] }
+  ]
+}

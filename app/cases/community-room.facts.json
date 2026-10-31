@@ -1,0 +1,52 @@
+{
+  "caseId": "community-room",
+  "facts": [
+    {
+      "id": "cr.current",
+      "detail": "Bookings go in one paper book at the front desk; double bookings keep happening",
+      "disclosure": "given",
+      "cues": ["book", "paper", "double"],
+      "topicArea": "Current booking process",
+      "keywords": ["book", "booking", "paper", "double", "process"],
+      "signaturePhrases": ["paper book", "double booking"]
+    },
+    {
+      "id": "cr.scale",
+      "detail": "3 rooms (activity hall, meeting room, dance studio); about 30 bookings a week, more in school holidays",
+      "disclosure": "on-ask",
+      "cues": ["room", "rooms", "30", "week", "how many"],
+      "topicArea": "Rooms and volume",
+      "keywords": ["room", "rooms", "how many", "bookings a week", "busy", "volume"],
+      "signaturePhrases": ["activity hall", "dance studio", "30 bookings"]
+    },
+    {
+      "id": "cr.bookers",
+      "detail": "Mostly residents' groups; many regulars are elderly, some have no smartphone, so they phone or walk in",
+      "disclosure": "on-ask",
+      "cues": ["elderly", "smartphone", "phone", "walk in", "seniors"],
+      "topicArea": "Who books",
+      "keywords": ["who books", "who makes", "residents", "groups", "elderly", "seniors", "smartphone", "walk in", "makes the bookings"],
+      "signaturePhrases": ["smartphones", "walk in", "seniors' exercise", "elderly", "don't have smartphones", "walk-in"]
+    },
+    {
+      "id": "cr.root-cause",
+      "detail": "Phone bookings are written on sticky notes by whoever answers; some notes never reach the book",
+      "disclosure": "on-probe",
+      "cues": ["sticky", "note", "phone booking", "copied"],
+      "topicArea": "Cause of double bookings",
+      "keywords": ["double booking", "phone booking", "sticky"],
+      "signaturePhrases": ["sticky note", "never makes it into the book"],
+      "parentFactId": "cr.current",
+      "probeCues": ["why", "cause", "reason", "recorded", "write down", "get into the book"]
+    },
+    {
+      "id": "cr.staff",
+      "detail": "Two staff on alternating shifts, volunteers at weekends; one shared desk computer",
+      "disclosure": "on-ask",
+      "cues": ["staff", "shift", "volunteer", "computer", "desk"],
+      "topicArea": "Who runs the desk",
+      "keywords": ["staff", "who works", "desk", "shift", "volunteer", "computer"],
+      "signaturePhrases": ["alternating shifts", "one computer", "volunteer", "shift", "shared computer", "computer at the desk", "take turns"]
+    }
+  ]
+}
