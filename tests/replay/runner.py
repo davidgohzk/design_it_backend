@@ -14,8 +14,8 @@ import os
 import time
 from pathlib import Path
 
-from app.chat.client import structured_reply
 from app.cases import CASE_FACTS
+from app.chat.client import structured_reply
 from app.chat.prompts import PERSONAS
 
 SCRIPTS_DIR = Path(__file__).parent

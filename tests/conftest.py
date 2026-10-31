@@ -7,12 +7,12 @@ os.environ["SOCLAAS_MODEL"] = "test-model"
 os.environ["SOCLAAS_BASE_URL"] = "http://soclaas.test/v1"
 os.environ["ALLOWED_ORIGINS"] = "http://localhost:5173"
 
-import pytest  # noqa: E402
-from fastapi.testclient import TestClient  # noqa: E402
+import pytest
+from fastapi.testclient import TestClient
 
-from app.config import Settings  # noqa: E402
-from app.main import create_app  # noqa: E402
-from tests.fakes import FakeClient, FakeState  # noqa: E402
+from app.config import Settings
+from app.main import create_app
+from tests.fakes import FakeClient, FakeState
 
 
 @pytest.fixture
