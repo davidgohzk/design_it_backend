@@ -6,7 +6,8 @@ from pathlib import Path
 
 import pytest
 
-from app.prompts import CASE_FACTS, CASES_DIR, PERSONAS
+from app.cases import CASE_FACTS, CASES_DIR
+from app.chat.prompts import PERSONAS
 
 FRONTEND_CASES_DIR = Path(__file__).resolve().parents[2] / "design_it_frontend" / "src" / "cases"
 

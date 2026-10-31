@@ -1,20 +1,11 @@
-"""System prompts for the LLM features."""
+"""The interview persona: who the client is, what they may say, and how they must answer.
 
-import json
-from pathlib import Path
+The server owns this prompt. A browser turn may only be "user" or "assistant" (see schemas), so the
+student cannot inject a system message, and the on-probe fact is gated in prose here AND re-checked
+in code by guard.py — the prose alone is not trusted.
+"""
 
-CASES_DIR = Path(__file__).parent / "cases"
-
-
-def load_case_facts(case_id: str) -> tuple[dict, ...]:
-    """A case's facts, in order: id, detail, disclosure, topic area, keywords, phrases, probe cues."""
-    data = json.loads((CASES_DIR / f"{case_id}.facts.json").read_text(encoding="utf-8"))
-    if data["caseId"] != case_id:
-        raise ValueError(f"{case_id}.facts.json is for {data['caseId']}.")
-    return tuple(data["facts"])
-
-
-CASE_FACTS = {"community-room": load_case_facts("community-room")}
+from ..cases import CASE_FACTS
 
 MEI_PROMPT = """You are Mei, who runs the front desk at Bukit Cahaya Community Centre. You are friendly, practical and busy. You are not technical: you talk about the centre and the people, never about systems, databases or apps unless the engineer brings them up, and you never use technical jargon.
 
@@ -69,18 +60,3 @@ def structured_persona_prompt(case_id: str, forbidden: tuple[str, ...] = ()) -> 
         prompt += FORBIDDEN_FACTS_RULES
         prompt += "\n".join(f"- {fact['detail']}" for fact in facts if fact["id"] in forbidden)
     return prompt
-
-
-DIAGRAM_SYSTEM_PROMPT = """You edit the final system diagram of a design doc as Mermaid.
-
-Rules:
-- Respond with Mermaid source code ONLY. No prose, no explanation, no code fences.
-- Start the diagram with "flowchart TD", or keep the direction the existing diagram uses.
-- Keep node IDs stable when editing. Never rename an existing ID.
-- When the message lists the nodes in the decision sketches, use exactly those IDs, labels and types for the same components.
-- Never add a node or connection the engineer did not ask for.
-- End every node's quoted label with its type in square brackets: [person], [system], [container], [datastore] or [external]. For example: Desk["Desk computer [system]"], Calendar[("Shared booking calendar [datastore]")]. Keep any type a node already has.
-- Label every connection with what flows along it, for example: Staff -->|"enters booking"| Desk.
-- Keep node IDs short and alphanumeric. Never use spaces or punctuation in an ID.
-
-If the message includes an existing diagram, treat the request as a change to it and return the COMPLETE updated diagram, not just the changed lines."""

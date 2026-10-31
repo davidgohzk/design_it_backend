@@ -3,7 +3,7 @@ import json
 import openai
 
 from app import llm as llm_module
-from app.client import GUARD_FALLBACK_REPLY
+from app.chat.client import GUARD_FALLBACK_REPLY
 from tests.fakes import status_error
 from tests.test_api import parse_sse
 from tests.transcripts import COMMUNITY_ROOM_GOLDEN, as_history

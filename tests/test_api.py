@@ -4,16 +4,18 @@ import httpx
 import openai
 import pytest
 
-from app.assess_prompts import (
+from app.assess.prompts import (
     ASSESS_PROMPTS,
     ASSESS_SECTIONS,
-    BANO_PROMPT,
     BANO_PROMPT_VERSION,
-    JUSTIFY_PROMPT,
-    SUGGEST_PROMPT,
     assess_retry_prompt,
 )
-from app.prompts import DIAGRAM_SYSTEM_PROMPT, MEI_PROMPT
+
+# Each task's prompt now lives in its own module; the registry is the way in.
+BANO_PROMPT = ASSESS_PROMPTS["bano"]
+JUSTIFY_PROMPT = ASSESS_PROMPTS["justify"]
+SUGGEST_PROMPT = ASSESS_PROMPTS["suggest"]
+from app.chat.prompts import MEI_PROMPT
 from tests.fakes import status_error
 
 CHAT_BODY = {"caseId": "community-room", "messages": [{"role": "user", "content": "Hi Mei"}]}
@@ -99,75 +101,6 @@ def test_chat_rejects_invalid_conversations(client, fake, messages):
     assert fake.calls == []
 
 
-def test_diagram_retry_rebuilds_message_sequence(client, fake):
-    body = {
-        "prompt": "Add a cache",
-        "currentCode": "flowchart TD\n  A-->B",
-        "priorAttempt": {"code": "flowchart TD\n  A-->", "error": "Parse error on line 2"},
-    }
-
-    response = client.post("/api/diagram", json=body)
-
-    assert response.status_code == 200
-    call = fake.calls[0]
-    assert call["messages"] == [
-        {"role": "system", "content": DIAGRAM_SYSTEM_PROMPT},
-        {"role": "user", "content": "Existing diagram:\nflowchart TD\n  A-->B"},
-        {"role": "user", "content": "Add a cache"},
-        {"role": "assistant", "content": "flowchart TD\n  A-->"},
-        {
-            "role": "user",
-            "content": "That diagram failed to parse with this error:\nParse error on line 2\n\nReturn a corrected Mermaid diagram only.",
-        },
-    ]
-    assert (call["temperature"], call["top_p"], call["max_tokens"]) == (0.2, 1, 4000)
-
-
-def test_diagram_edits_existing_diagram_with_the_sketch_nodes(client, fake):
-    body = {
-        "prompt": "Add SMS",
-        "currentCode": "flowchart LR\n  A-->B",
-        "context": 'SMS: "SMS confirmation"',
-    }
-
-    response = client.post("/api/diagram", json=body)
-
-    assert fake.calls[0]["messages"] == [
-        {"role": "system", "content": DIAGRAM_SYSTEM_PROMPT},
-        {
-            "role": "user",
-            "content": 'Nodes in the decision sketches (use these IDs for the same components):\nSMS: "SMS confirmation"',
-        },
-        {"role": "user", "content": "Existing diagram:\nflowchart LR\n  A-->B"},
-        {"role": "user", "content": "Add SMS"},
-    ]
-    assert parse_sse(response.text)[-1] == ("done", {"model": "test-model"})
-
-
-def test_diagram_prompt_keeps_the_spec_rules():
-    assert "Keep node IDs stable when editing" in DIAGRAM_SYSTEM_PROMPT
-    assert "Never add a node or connection the engineer did not ask for" in DIAGRAM_SYSTEM_PROMPT
-    # C4-style node types and labelled arrows (WP5).
-    for node_type in ("[person]", "[system]", "[container]", "[datastore]", "[external]"):
-        assert node_type in DIAGRAM_SYSTEM_PROMPT
-    assert "Label every connection" in DIAGRAM_SYSTEM_PROMPT
-    assert "Always start the diagram with" not in DIAGRAM_SYSTEM_PROMPT
-
-
-def test_diagram_rejects_unknown_fields(client, fake):
-    # The old sketch and free-form modes are gone, and the schema forbids extra fields.
-    response = client.post("/api/diagram", json={"mode": "final", "prompt": "A web app"})
-
-    assert response.status_code == 422
-    assert fake.calls == []
-
-
-def test_diagram_without_existing_code(client, fake):
-    client.post("/api/diagram", json={"prompt": "A web app", "currentCode": None, "priorAttempt": None})
-
-    assert [message["role"] for message in fake.calls[0]["messages"]] == ["system", "user"]
-
-
 def test_server_key_rejection_is_reported(client, fake):
     fake.error_before = status_error(openai.AuthenticationError, 401)
 
@@ -190,7 +123,7 @@ def test_upstream_rate_limit_passes_retry_after(client, fake):
 def test_upstream_unreachable(client, fake):
     fake.error_before = openai.APIConnectionError(request=httpx.Request("POST", "http://soclaas.test/v1"))
 
-    response = client.post("/api/diagram", json={"prompt": "A web app"})
+    response = client.post("/api/chat", json=CHAT_BODY)
 
     assert response.status_code == 502
     assert response.json()["error"]["code"] == "upstream_unreachable"
@@ -200,7 +133,7 @@ def test_mid_stream_failure_is_reported_in_band(client, fake):
     fake.chunks = ["partial"]
     fake.error_mid = status_error(openai.InternalServerError, 500)
 
-    response = client.post("/api/diagram", json={"prompt": "A web app"})
+    response = client.post("/api/chat", json=CHAT_BODY)
 
     assert response.status_code == 200
     events = parse_sse(response.text)

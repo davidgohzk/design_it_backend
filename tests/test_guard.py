@@ -1,7 +1,7 @@
 import pytest
 
-from app.guard import allowed_facts, check_reply, contains_term, disclosed_before
-from app.prompts import CASE_FACTS
+from app.chat.guard import allowed_facts, check_reply, contains_term, disclosed_before
+from app.cases import CASE_FACTS
 from tests.transcripts import COMMUNITY_ROOM_DISCLOSURES, COMMUNITY_ROOM_GOLDEN, as_history
 
 CR = CASE_FACTS["community-room"]

@@ -1,0 +1,30 @@
+name: Checks
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+
+      # No secrets needed: tests/conftest.py sets the environment itself, and tests/fakes.py
+      # replaces the model client, so the suite never reaches the network. The live replay suite
+      # (tests/replay/runner.py) is run by hand and is not part of this.
+      - name: Test
+        run: pytest -q

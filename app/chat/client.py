@@ -7,8 +7,9 @@ import time
 from fastapi.responses import StreamingResponse
 
 from .guard import ReplyCheck, allowed_facts, check_reply
-from .llm import LLM, UpstreamSlots, complete_json, stream_reply
-from .prompts import CASE_FACTS, structured_persona_prompt
+from ..llm import LLM, UpstreamSlots, complete_json, stream_reply
+from ..cases import CASE_FACTS
+from .prompts import structured_persona_prompt
 
 logger = logging.getLogger("design_it.client")
 
