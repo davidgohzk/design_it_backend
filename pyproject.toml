@@ -1,0 +1,23 @@
+# Lint config only. The app is not packaged: it is served by `start.sh`, so there is no
+# [project] table and no build backend here.
+[tool.ruff]
+target-version = "py312"
+line-length = 120
+extend-exclude = [".venv", "tests/replay/transcripts"]
+
+[tool.ruff.lint]
+# F = real bugs (undefined names, unused imports), I = import order, B = bugbear traps,
+# UP = outdated syntax. E501 (line length) is deliberately off: the long lines in this repo are
+# prompt prose in app/chat/prompts.py and app/assess/prompts/*, and reflowing a prompt changes
+# what the model reads.
+select = ["F", "I", "B", "UP"]
+
+[tool.ruff.lint.flake8-bugbear]
+# `x: T = Depends(...)` in a signature is how FastAPI declares a dependency, so B008 does not
+# apply to it. Named here rather than switching B008 off, so a real mutable default still fails.
+extend-immutable-calls = ["fastapi.Depends", "fastapi.Query", "fastapi.Body", "fastapi.Header"]
+
+[tool.ruff.lint.per-file-ignores]
+# conftest.py sets os.environ before importing the app on purpose — app.main builds a
+# module-level app from the environment, so the imports cannot come first.
+"tests/conftest.py" = ["E402"]

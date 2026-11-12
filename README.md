@@ -57,6 +57,7 @@ python -m venv .venv
 .venv/Scripts/activate            # macOS/Linux: source .venv/bin/activate
 pip install -r requirements-dev.txt
 cp .env.example .env              # fill in SOCLAAS_API_KEY and SOCLAAS_MODEL
+ruff check .                      # config in pyproject.toml; --fix sorts imports
 pytest
 uvicorn app.main:app --reload --port 8000 --env-file .env
 ```

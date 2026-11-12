@@ -7,8 +7,8 @@ from pathlib import Path
 
 import pytest
 
-from app.llm import LLM, UpstreamSlots
 from app.cases import CASE_FACTS
+from app.llm import LLM, UpstreamSlots
 from tests.fakes import FakeClient, FakeState
 from tests.replay.runner import OPENING, SCRIPTS_DIR, load_scripts, play, summarise
 
