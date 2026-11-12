@@ -19,7 +19,7 @@ PROMPT = (
 
 The evidence lists items of three kinds:
 - requirement: an R# with the quotes it cites from the chat or the brief. Does it say what its quotes say?
-- decision: a D# with the text of the requirements it is "because" of, the alternative it rejected, its trade-off and its quality. Does "because" support the choice, and is the choice sized to the evidence?
+- decision: a D# with the text of the requirements it is "because" of, the alternative it rejected and its trade-off. Does "because" support the choice, and is the choice sized to the evidence?
 - sketch: a D#'s Mermaid sketch with the decision's text. Does the sketch show the decision, and nothing extra?
 
 Verdicts: sound = it follows; weak = it partly follows, overstates, or adds something unsupported; unsound = it does not follow, or the evidence argues against it.
